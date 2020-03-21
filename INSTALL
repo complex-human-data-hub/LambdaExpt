@@ -1,0 +1,9 @@
+# Run the following commands
+# if you don't have virtualenv install
+# then sudo pip install virtualenv
+# Code is currently running Python 2.7+
+virtualenv venv
+source venv/bin/activate
+pip install pip --upgrade
+pip install -r requirements.txt
+

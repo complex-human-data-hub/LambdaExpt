@@ -1,0 +1,64 @@
+{% extends "experiment_wrapper.html" %}
+
+{% block title %} Experiment {% endblock %}
+
+{% block extra_head %}
+
+    <script src="https://static.mall-lab.com/static/jspsych/jspsych.js" type="text/javascript"></script>
+    <script src="https://static.mall-lab.com/static/jspsych/plugins/jspsych-html-keyboard-response.js" type="text/javascript"></script>
+    <script src="https://static.mall-lab.com/static/jspsych/plugins/jspsych-image-keyboard-response.js" type="text/javascript"></script>
+    <script src="https://static.mall-lab.com/static/jspsych/plugins/jspsych-survey-multi-choice.js" type="text/javascript"></script>
+    <script src="{{url_for('static',filename='jspsych/plugins/jspsych-game-rat-skill.js')}}"></script>
+    <script src="https://static.mall-lab.com/static/jspsych/plugins/jspsych-external-html.js" type="text/javascript"></script>
+    <link rel="stylesheet" href="https://static.mall-lab.com/static/jspsych/css/jspsych.css" type="text/css"></link>
+
+    <link rel="stylesheet" href="{{url_for('static', filename='css/experiment.css')}}" type="text/css"></link>
+
+{% endblock %}
+
+{% block body %}
+<div id="jspsych-target"></div>
+{% endblock %}
+
+{% block after_body %}
+
+  <script>
+    console.log("Choice", {{choice}});
+    console.log("Randint", {{randint}});
+    /* create timeline */
+    var timeline = [];
+
+
+    // Card Game
+    timeline.push({
+        type: 'game-rat-skill',
+        data: {'part': 'card_game'},
+        card_delay: {{card_delay}},
+        game_duration: 15
+    });
+
+   
+    // Card Game
+    timeline.push({
+        type: 'game-rat-skill',
+        data: {'part': 'card_game'},
+        card_delay: {{card_delay}},
+        game_duration: 15
+    });
+
+   
+    
+
+    /* start the experiment */
+    jsPsych.init({
+      timeline: timeline,
+      display_element: 'jspsych-target',
+      on_finish: function() {
+        //jsPsych.data.displayData();
+      },
+      default_iti: 250
+    });
+	
+  </script>
+
+{% endblock %}

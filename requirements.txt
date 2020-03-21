@@ -1,0 +1,5 @@
+pip
+flask
+zappa
+flask_s3
+flask-compress

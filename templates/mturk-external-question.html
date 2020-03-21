@@ -1,0 +1,28 @@
+<html>
+    <head>
+        <meta http-equiv='Content-Type' content='text/html; charset=UTF-8'/>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    </head>
+    <body>
+        <button id="start_experiment" type="button">Start experiment</button>
+
+        <script type="text/javascript">
+            var started_experiment = false;
+            $("#start_experiment").click(function(){
+                if(started_experiment){
+                    return;
+                }
+                var width =  parseInt( $(window).width() * 0.8, 10); 
+                var height =  parseInt( $(window).height() * 0.8, 10); 
+
+                window.open(
+                    '/mturk-expt?workerId={{workerId}}&assigmentId={{assignmentId}}&hitId={{hitId}}',
+                    'ExpterimentWindow',
+                    width=width,
+                    height=height
+                );
+                started_experiment = true;
+            });
+        </script>
+    </body>
+</html>

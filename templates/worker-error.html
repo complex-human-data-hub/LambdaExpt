@@ -1,0 +1,46 @@
+<html>
+    <head>
+
+
+        <style>
+        .content{
+        width:80%;
+        }
+        span{
+            font-weight:600;
+        }
+        #mturk_survey_code{
+            font-size:2em;
+        }
+        .survey_code_container{
+            background-color: #CCC;
+            width: 50%;
+            padding: 0.75em;    
+        }
+        .exp-document-container{
+            width:80%;
+            margin: auto;
+        }
+        </style>
+
+    </head>
+    <body>
+            <div class="content">
+                <div style="margin-top:20px;"></div>
+                <img src="//static.mall-lab.com/static/images/university.png" style="float:right;width:100px;padding:8px" />
+                <h2>You cannot proceed with this experiment.</h2>
+                <div class="exp-document-container">
+                    <div class="survey_code_container">
+                    <h4>Please return this HIT</h4>
+                    {% if 'study_repeat' == reason %}
+                        You have already attempted this experiment  
+                    {% endif %}
+                        <div style="margin-top:30px;"></div>
+                    </div>
+                    <div style="margin-top:60px;"></div>
+
+                </div>
+            </div>
+
+    </body>
+</html>

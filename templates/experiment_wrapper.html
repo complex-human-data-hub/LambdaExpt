@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+  <head>
+      <title>{% block title %}{%endblock%}</title>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+      <script type="application/javascript">
+        var STATIC_DIR = "{{url_for('static', filename='')}}";
+      </script>
+	{% block extra_head %}{%endblock%}
+  </head>
+  <body>
+      <style>
+		.expt_loader {
+		  margin: 0 auto;
+		  border: 16px solid #f3f3f3;
+		  border-radius: 50%;
+		  border-top: 16px solid #3498db;
+		  width: 120px;
+		  height: 120px;
+		  -webkit-animation: spin 2s linear infinite; /* Safari */
+		  animation: spin 2s linear infinite;
+		}
+
+		/* Safari */
+		@-webkit-keyframes spin {
+		  0% { -webkit-transform: rotate(0deg); }
+		  100% { -webkit-transform: rotate(360deg); }
+		}
+
+		@keyframes spin {
+		  0% { transform: rotate(0deg); }
+		  100% { transform: rotate(360deg); }
+		}
+
+		.expt-pop-outer {
+			background-color: rgba(0, 0, 0, 0.5);
+			position: fixed;
+			top: 0;
+			left: 0;
+			width: 100%; 
+			height: 100%;
+			z-index: 3000;
+		}
+		.expt-pop-inner {
+			background-color: #fff;
+			width: 85%;
+			height: 85%;
+			padding: 25px;
+			margin: 25px auto; 
+			z-index: 3000;
+		}
+
+      </style>
+      
+      <script type="application/javascript">
+
+        function _display_loader(msg){
+            $(".expt-pop-outer h3").text(msg);
+            $(".expt-pop-outer").fadeIn("slow");
+        }
+        function _hide_loader(){
+            $(".expt-pop-outer").fadeOut("slow");
+        }
+
+		var _ustart_time_local = new Date();
+        var ua = navigator.userAgent;
+        var click_event_type = (ua.match(/iPad/i)) ? "touchstart" : "click";
+        var _record_task_complete = false;
+        var _send_task_data = function(expt_data){
+            // Finish task and sent data back to server
+			//$(".expt-pop-outer").fadeIn("slow");
+            _display_loader("Saving experiment data...");
+            var _uid = "{{uid}}" ;
+            var _uend_time_local = new Date();
+            var _failed_ajax = "Sorry an error has occurred, and your task has not been recorded. Please inform the researcher."
+			
+			if(typeof(expt_data) !== 'string'){
+				expt_data = JSON.stringify( expt_data );
+			}
+
+            var _data = {
+                results : expt_data,
+                uid : _uid,
+                start_date_local : _ustart_time_local.toISOString(),
+                end_date_local : _uend_time_local.toISOString(),
+                date_offset : _uend_time_local.getTimezoneOffset(),
+            };
+
+
+            $.ajax({
+                type: 'POST',
+                url: '/record-task',
+                data: _data ,
+                dataType: 'json',
+				//async: false,
+                success: function (data) {
+                    if(data['status'] == 'success'){
+                        //alert("Your record has been updated");
+                    }else{
+                        alert(failed_ajax + ": 1");
+                    }
+                    _record_task_complete = true;
+					//$(".expt-pop-outer").fadeOut("slow");
+                    _hide_loader();
+                },
+                error: function (jqXHR, textStatus, errorThrown){
+                    alert(_failed_ajax + ": 2");
+                    _record_task_complete = true;
+					//$(".expt-pop-outer").fadeOut("slow");
+                    _hide_loader();
+                }
+            });
+
+        }
+
+      </script>
+
+      {% block body %}
+      {% endblock %}
+
+    <div style="display: none;" class="expt-pop-outer">
+        <div class="expt-pop-inner">
+			<h3>Saving experiment data...</h3>
+	  		<div class="expt_loader"></div>
+		</div>
+	</div>
+
+  {% block after_body %}
+  {% endblock %}  
+
+
+  <script type="application/javascript">
+    $(document).ready(function(){
+        if($("#jspsych-target")){
+            $("#jspsych-target").height( parseInt( $(window).height(), 10) );
+        }
+    });
+  </script>  
+
+  </body>
+</html>
+

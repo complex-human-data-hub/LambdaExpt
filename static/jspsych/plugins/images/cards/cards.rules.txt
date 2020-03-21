@@ -1,0 +1,31 @@
+Card game rules:
+
+The card game should display cards one at a time at a fairly rapid pace and have a counter at the bottom that keeps track of the subject's score. I tend to use around 700 ms for each card and a brief 3-5 ms pause between the cards.
+
+I tend to randomly select 4 rules and have those in place for all iterations of the card game.
+
+The one exception is the "two suits in a row" rule, which is in place every game. This yields a 1 point increase. This is in place *every game*.
+
+The other rules are as follows:
+
+1. Two in a row with the same value: two cards that are both 5's, kings, etc. This yields a 2 point increase.
+
+2. Royalty: press the spacebar if two cards in a row are both royalty. 4 point increase.
+
+3 Suit sandwich: press the spacebar if two cards with the same suit are separated by another card. 7 point increase.
+
+4. Value sandwich: press the spacebar if two cards with the same value are separated by another card. 8 point increase.
+
+5. Sum to 11: press the spacebar if two cards' values in a row sum to 11, e.g., 5 and then 6 are presented.
+
+6. Press the J key if they see the joker: has to be the J key and not the spacebar. This gives 5 points. If they press the spacebar instead, they lose 5 points.
+
+7. Press the A key for the Ace of Spades: has to be the A key and not the spacebar. This gives 15 points. If they press the spacebar instead they lose 5 points.
+
+What happens when a rule is met:
+
+Subjects are told of the rule along with their point increase in green text and the action stops for 750 ms.
+
+What happens when a rule is *not* met:
+
+If no rules apply, or if they press the wrong key in the case of rules 6 and 7, they are told they made an error in red text along with their point penalty. If Rules 6 and 7 apply, they are reminded that they have to press a different key (such as J for the joker).

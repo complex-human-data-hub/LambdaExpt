@@ -1,5 +1,8 @@
 zappa_settings.json
 
+# Vim files 
+.*.swp
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

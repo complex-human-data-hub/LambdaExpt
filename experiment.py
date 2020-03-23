@@ -11,7 +11,6 @@ from flask_compress import Compress
 from expt_config import get_data, s3_results_key
 import expt_config
 import config
-import os 
 
 DEBUG = config.DEBUG
 expt_uid = config.EXPT_UID
@@ -29,6 +28,8 @@ s3_static_bucket = "chdhstatic"
 s3_data_bucket = "chdhexpt"
 
 me_expt = me.Expt(domain=config.SDB_EXPERIMENTS_PARTICIPANTS)
+
+
 
 app = Flask("Experiment_Server", static_folder=static_folder)
 
@@ -64,11 +65,11 @@ def unique_start_exp():
     if error:
         return render_template(error['template'], **error)
 
-
+    data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG )
     return render_template(
         'exp.html',
         uid=uid,
-        data=json.dumps( get_data( request.args ) )
+        data=json.dumps( data )
         )
 
 
@@ -89,11 +90,11 @@ def mturk_start_exp():
         print(error)
         return render_template(error['template'], **error)
 
-
+    data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG ) 
     return render_template(
         'exp.html',
         uid=uid,
-        data=json.dumps( get_data( request.args ) )
+        data=json.dumps( data )
         )
 
 
@@ -134,11 +135,12 @@ def rep_start_expt():
             'email': request.args['email']
             })
 
+    data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG )
     return render_template(
         'exp.html',
         uid=uid,
         rep=1,
-        data=json.dumps( get_data( request.args ) )
+        data=json.dumps( data )
         )
 
 
@@ -161,12 +163,28 @@ def start_exp():
     if error:
         return render_template(error['template'], **error)
 
-
+    data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG )
     return render_template(
         'exp.html',
         uid=uid,
-        data=json.dumps( get_data( request.args ) )
+        data=json.dumps( data )
         )
+
+
+@app.route('/update-queue', methods=['GET'])
+@nocache
+def update_queue():
+    ret = expt.update_queue()
+    return jsonify(ret)
+
+
+
+@app.route('/poll-queue', methods=['GET'])
+@nocache
+def poll_queue():
+    ret = expt.poll_queue()
+    return jsonify(ret)
+
 
 
      

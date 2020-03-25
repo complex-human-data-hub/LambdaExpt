@@ -1,3 +1,8 @@
+LambdaExpt is a framework for running Psychology Experiments on Amazon Web Services Lambdas. These lambdas allow us to both run experiments cheaply and at scale. This framework has been developed by the Complex Human Data Hub at the University of Melbourne. It can be used to run individual experiments, experiments on Mechanical Turk, and Research For Experience (REP) experiments.
+
+Below gives you a brief over of how to use the framework, please read the wiki for more detail:
+https://github.com/complex-human-data-hub/LambdaExpt/wiki
+
 
 STARTING THE LOCAL SERVER
 =========================
@@ -25,14 +30,7 @@ https://example.com/unique-expt?foo=bar&foo2=bar2
 BASIC STRUCTURE OF YOUR EXPERIMENT
 ==================================
 * expt_config.py
-This is where your python code goes. You will setup your experimental stimuli in this file. You must provide the following variables and functions in this file:
-
-VARIABLES:
-  expt_uid
-  s3_static_bucket
-  s3_data_bucket
-  s3_results_key
-  DEBUG
+This is where your python code goes. You will setup your experimental stimuli in this file. 
 
 You can optionally provide a flask Blueprint using the 'custom_code' variable. Flask Blueprints allow you to define your own routes. 
 

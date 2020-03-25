@@ -11,7 +11,7 @@ If you are developing locally the change to a localhost address, for example:
 http://localhost:5000/unique-expt
 
 or in production:
-https://000028.mall-lab.com/unique-expt
+https://example.com/unique-expt
 
 
 ADDING PARAMETERS TO PASS TO PYTHON
@@ -19,7 +19,7 @@ ADDING PARAMETERS TO PASS TO PYTHON
 You can also add parameters to pass to the get_data(opts) function mentioned below:
 http://localhost:5000/expt?unique-expt?foo=bar&foo2=bar2
 or
-https://000028.mall-lab.com/unique-expt?foo=bar&foo2=bar2
+https://example.com/unique-expt?foo=bar&foo2=bar2
 
 
 BASIC STRUCTURE OF YOUR EXPERIMENT
@@ -44,23 +44,9 @@ FUNCTIONS:
 * templates/exp.html
 This is were you will create your experiments HTML
 
-* static_b912979ee2b5aceb28c429466f9dedd8
+* static
   This is a directory for you static files: images, css, js
 
-
-RESEARCHER PAGE
-===============
-https://researcher.mall-lab.com/expt?uid=b912979ee2b5aceb28c429466f9dedd8
-
-From the researcher page you can get your results and create custom links for participants
-
-If you are on a linux machine the easiest way to get to the researcher page associated with your experiment is to run:
-./goto-researcher-page.sh
-
-CREATING CUSTOM URL TO PARTICIPANTS
-============================
-# To create a new participant in the database, go to the researcher page, enter the participants email address, and you the system will generate a URL to give to the participant, for example:
-https://000028.mall-lab.com/expt?uid=bd307e938632af6df0d1dfa769d85ae2
 
 
 

@@ -3,8 +3,69 @@
 
 from builtins import object
 from functools import wraps, update_wrapper
-from flask import request, Response, make_response, current_app
+from flask import request, Response, make_response, current_app, render_template
+import config
+import re
 
+restricted = {
+        'IE': {
+            'type': 'header',
+            'header':'User-Agent',
+            'regex': [r'MSIE ([0-9]{1,}[\.0-9]{0,})', r'Trident/([0-9]{1,}[\.0-9]{0,})'],
+            'reason': 'Using Internet Explorer browser',
+            },
+        'mobile': {
+            'type': 'header',
+            'header': 'CloudFront-Is-Mobile-Viewer',
+            'regex' : [r'true'],
+            'reason': 'Using a mobile device',
+            },
+        'tablet': {
+            'type': 'header',
+            'header': 'CloudFront-Is-Tablet-Viewer',
+            'regex' : [r'true'],
+            'reason': 'Using a tablet device',
+            },
+        'tv': {
+            'type': 'header',
+            'header': 'CloudFront-Is-SmartTV-Viewer',
+            'regex' : [r'true'],
+            'reason': 'Using a Smart TV',
+            },
+        }
+
+
+# Decorator to check restrictions in config
+# =========================================
+
+def check_restrictions(request):
+    if config.DEBUG or not hasattr(config, 'RESTRICTIONS'):
+        return None
+    for key in config.RESTRICTIONS:
+        checker = restricted.get(key)
+        if checker.get('type') == 'header':
+            for r in checker.get('regex', []):
+                regex = re.compile(r)
+                if regex.search( request.headers.get( checker.get('header', ''), '') ):
+                    return checker.get('reason')
+
+
+def restrictions(func):
+    """Check any device/browser restriction from config"""
+    @wraps(func)
+    def wrapped(*args, **kwargs):
+        restricted_reason = check_restrictions(request)
+        if restricted_reason:
+            return render_template(
+                    'restricted.html',
+                    reason=restricted_reason
+                    )
+        return func(*args, **kwargs)
+    return wrapped
+
+
+
+        
 # provides easy way to print to log in custom.py
 # =========================================
 def print_to_log(stuff_to_print):
@@ -24,45 +85,6 @@ def nocache(func):
     return update_wrapper(new_func, func)
 
 
-# Authentication decorator
-# ========================
 
-class PsiTurkAuthorization(object):
-    ''' Authorize route '''
 
-    def __init__(self, config):
-        self.queryname = config.get('Server Parameters', 'login_username')
-        self.querypw = config.get('Server Parameters', 'login_pw')
 
-    @classmethod
-    def wrapper(cls, func, args):
-        ''' Auth wrapper '''
-        return func(*args)
-
-    def check_auth(self, username, password):
-        ''' This function is called to check if a username password combination
-            is valid. '''
-        return username == self.queryname and password == self.querypw
-
-    @classmethod
-    def authenticate(cls):
-        '''Sends a 401 response that enables basic auth'''
-        return Response(
-            'Could not verify your access level for that URL.\n'
-            'You have to login with proper credentials', 401,
-            {'WWW-Authenticate': 'Basic realm="Login Required"'}
-        )
-
-    def requires_auth(self, func):
-        '''
-        Decorator to prompt for user name and password. Useful for data dumps,
-        etc.  That you don't want to be public.
-        '''
-        @wraps(func)
-        def decorated(*args, **kwargs):
-            ''' Wrapper '''
-            auth = request.authorization
-            if not auth or not self.check_auth(auth.username, auth.password):
-                return self.authenticate()
-            return func(*args, **kwargs)
-        return decorated

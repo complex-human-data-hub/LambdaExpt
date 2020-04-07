@@ -1,7 +1,7 @@
 from __future__ import print_function
 from builtins import str
-from flask import Flask, render_template, render_template_string, request, jsonify
-from user_utils import nocache
+from flask import Flask, render_template, request, jsonify
+from user_utils import nocache, restrictions
 from random import shuffle
 import json
 import MallExperiment as me
@@ -55,6 +55,7 @@ def page_not_found(e):
 
 @app.route('/unique-expt', methods=['GET'])
 @nocache
+@restrictions
 def unique_start_exp():
     # Record particpant starting experiment
     (uid, error) = me_expt.create_unique_participant(
@@ -66,6 +67,10 @@ def unique_start_exp():
         return render_template(error['template'], **error)
 
     data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG )
+
+    if data.get('_error') != None:
+        return render_template('error-page.html',error=data['_error'])
+    
     return render_template(
         'exp.html',
         uid=uid,
@@ -75,6 +80,7 @@ def unique_start_exp():
 
 @app.route('/mturk-expt', methods=['GET'])
 @nocache
+@restrictions
 def mturk_start_exp():
     if not 'workerId' in request.args:
         raise Exception("Unique ID not provided")
@@ -91,6 +97,10 @@ def mturk_start_exp():
         return render_template(error['template'], **error)
 
     data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG ) 
+
+    if data.get('_error') != None:
+        return render_template('error-page.html',error=data['_error'])
+
     return render_template(
         'exp.html',
         uid=uid,
@@ -115,7 +125,6 @@ def enter_rep_expt():
     if error:
         return render_template(error['template'], **error)
 
-
     return render_template(
             'rep-expt.html',
             rep=1,
@@ -136,6 +145,10 @@ def rep_start_expt():
             })
 
     data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG )
+
+    if data.get('_error') != None:
+        return render_template('error-page.html',error=data['_error'])
+
     return render_template(
         'exp.html',
         uid=uid,
@@ -147,6 +160,7 @@ def rep_start_expt():
 
 @app.route('/expt', methods=['GET'])
 @nocache
+@restrictions
 def start_exp():
     if not 'uid' in request.args:
         raise Exception("Unique ID not provided")
@@ -164,6 +178,10 @@ def start_exp():
         return render_template(error['template'], **error)
 
     data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG )
+
+    if data.get('_error') != None:
+        return render_template('error-page.html',error=data['_error'])
+
     return render_template(
         'exp.html',
         uid=uid,

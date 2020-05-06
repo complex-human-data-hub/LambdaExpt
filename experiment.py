@@ -2,7 +2,6 @@ from __future__ import print_function
 from builtins import str
 from flask import Flask, render_template, request, jsonify
 from user_utils import nocache, restrictions
-from random import shuffle
 import json
 import MallExperiment as me
 from flask_s3 import FlaskS3
@@ -11,6 +10,9 @@ from flask_compress import Compress
 from expt_config import get_data, s3_results_key
 import expt_config
 import config
+import requests
+import xmltodict
+import os
 
 DEBUG = config.DEBUG
 expt_uid = config.EXPT_UID
@@ -108,30 +110,74 @@ def mturk_start_exp():
         )
 
 
+# the API to mark REP as done
+@app.route('/mark-rep-as-done', methods=['GET'])
+@nocache
+@restrictions
+def mark_rep_as_done():
+    survey_code = request.args.get('survey_code')
+    uid = request.args.get('uid')
+
+    try:
+        response = requests.get(config.REP_URL.format(survey_code))
+        print(response)
+        result = xmltodict.parse(response.content)
+        print(result)
+        attrs = {
+            'uid': uid,
+            'survey_code': survey_code,
+            'rep_credit_response': json.dumps(result, default=str)
+        }
+        me_expt.set_participant_attrs(uid, attrs)
+        # if crediting is successful, there should be no error
+        no_error = result['WebstudyCreditResponse']['WebstudyCreditResult'].get('a:Errors').get('@i:nil')
+        # if there is error, throw it so the participant can see
+        if no_error != 'true':
+            error= result['WebstudyCreditResponse']['WebstudyCreditResult'].get('a:Errors')
+            return error.get('b:string'), 500
+        else:
+            return "updated", 200
+    except Exception:
+        return str(Exception), 500
+
 
 @app.route('/rep-expt', methods=['GET'])
 @nocache
+@restrictions
 def enter_rep_expt():
-    custom_attrs = {'REP': True}
+    survey_code = request.args.get('survey_code')
+    if survey_code == None:
+        return render_template('error-page.html',
+                               error="Please supply a survey code if you want to proceed with REP mode")
+
+    custom_attrs = {'REP': True, 'survey_code': survey_code}
 
     # Record particpant starting experiment
     (uid, error) = me_expt.create_unique_participant(
-            request,
-            expt_uid=expt_uid,
-            custom_attrs=custom_attrs,
-            debug=DEBUG
-            )
+        request,
+        expt_uid=expt_uid,
+        custom_attrs=custom_attrs,
+        debug=DEBUG
+    )
 
     if error:
         return render_template(error['template'], **error)
+    data = me_expt.check_set_participant_attrs(uid, get_data(request.args), DEBUG)
+
+    if data.get('_error') != None:
+        return render_template('error-page.html', error=data['_error'])
 
     return render_template(
-            'rep-expt.html',
-            rep=1,
-            uid=uid
-            )
+        'exp.html',
+        uid=uid,
+        rep=1,
+        survey_code=survey_code,
+        rep_on_consent=int(config.REP_ON_CONSENT),  # converting python boolean to integer to avoid ambiguity
+        data=json.dumps(data)
+    )
 
 
+# deprecated
 @app.route('/rep-start-expt', methods=['GET'])
 @nocache
 def rep_start_expt():
@@ -142,20 +188,15 @@ def rep_start_expt():
     if 'email' in request.args and not DEBUG:
         me_expt.set_participant_attrs(uid, {
             'email': request.args['email']
-            })
+        })
 
-    data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG )
-
-    if data.get('_error') != None:
-        return render_template('error-page.html',error=data['_error'])
-
+    data = me_expt.check_set_participant_attrs(uid, get_data(request.args), DEBUG)
     return render_template(
         'exp.html',
         uid=uid,
         rep=1,
-        data=json.dumps( data )
-        )
-
+        data=json.dumps(data)
+    )
 
 
 @app.route('/expt', methods=['GET'])

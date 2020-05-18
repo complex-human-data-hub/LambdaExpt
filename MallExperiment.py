@@ -25,8 +25,6 @@ import time
 import string 
 import logging
 import sys 
-import config 
-
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -79,13 +77,13 @@ class MallExperiment(Exception):
     pass
 
 class Expt(object):
-    region_name=config.AWS_DEFAULT_REGION
+    region_name='us-west-2'
     # domain linked to SimpleDB domain, so for 
     #   researcher: mall_experiments
     #   participant: mall_experiments_participants
-    domain=config.SDB_EXPERIMENTS 
-    experiments_domain=config.SDB_EXPERIMENTS
-    participants_domain=config.SDB_EXPERIMENTS_PARTICIPANTS
+    domain='mall_experiments'  
+    experiments_domain='mall_experiments'
+    participants_domain='mall_experiments_participants'
                                 
     def __init__(self, **kwargs):
         for k in kwargs:
@@ -152,7 +150,8 @@ class Expt(object):
             rec = Record(domain=self.experiments_domain)
             expt = rec.fetch(expt_uid)
             if not expt:
-                return (None, self.return_error('404.html'))
+                raise Exception("Unknown experiment")
+                #return (None, self.return_error('404.html'))
             
             dom = Domain(domain=self.participants_domain)
             participant_n = dom.count('expt_uid', expt_uid)
@@ -337,7 +336,7 @@ class Expt(object):
         #exclude_expt is a comma separated 
         #string of expt_uids to exclude
         excludes = ", ".join( map( "'{}'".format, list(map(string.strip,  exclude_expt.split(",") )) ) )
-        query = "SELECT count(*) FROM {} WHERE worker_id = '{}' AND expt_uid IN ({}) ".format(config.SDB_EXPERIMENTS_PARTICIPANTS, worker_id, excludes)  
+        query = "SELECT count(*) FROM {} WHERE worker_id = '{}' AND expt_uid IN ({}) ".format(self.participants_domain, worker_id, excludes)  
        
         
         #print query
@@ -365,7 +364,7 @@ class Expt(object):
                 #print "return False: not (hit_id or worker_id or assignment_id)"
                 return False, None
 
-            rec = Record(domain=config.SDB_EXPERIMENTS)
+            rec = Record(domain='mall_experiments')
             expt = rec.fetch(expt_uid)
             if not expt:
                 #print "return False: not expt"
@@ -443,7 +442,7 @@ class Expt(object):
             if not (hit_id or worker_id or assignment_id):
                 return (None, self.return_error('worker-accept-hit.html'))
 
-            rec = Record(domain=config.SDB_EXPERIMENTS)
+            rec = Record(domain='mall_experiments')
             expt = rec.fetch(expt_uid)
             if not expt:
                 return (None, self.return_error('404.html'))
@@ -626,7 +625,7 @@ class Expt(object):
 
 
     def fetch_results(self, expt_uid, ignore={}):
-        query = "SELECT * FROM {} WHERE expt_uid = '{}' ".format(config.SDB_EXPERIMENTS_PARTICIPANTS, expt_uid)
+        query = "SELECT * FROM {} WHERE expt_uid = '{}' ".format(self.participants_domain, expt_uid)
         results = []
         qs = QuerySelect()
         for item in qs.sql(query):
@@ -640,9 +639,24 @@ class Expt(object):
                     print("Could not retreive result for item {}".format(item['uid']))
                     print(item)
 
+        return results
 
+
+    def fetch_result_from_key(self, expt_uid, key, value):
+        query = "SELECT * FROM {} WHERE expt_uid = '{}' AND {} = '{}' ".format(self.participants_domain, expt_uid, key, value)
+        results = []
+        qs = QuerySelect()
+        for item in qs.sql(query):
+            if "s3_results" in item:
+                try:
+                    item['results'] = self.get_S3(item['s3_results'])
+                    results.append(item)
+                except Exception as e:
+                    print("Could not retreive result for item {}".format(item['uid']))
+                    print(item)
 
         return results
+    
 
     def debug(self, msg):
         now = datetime.now()
@@ -650,7 +664,7 @@ class Expt(object):
         _debug(msg)
 
     def fetch_results_threaded(self, expt_uid, ignore={}):
-        query = "SELECT * FROM {} WHERE expt_uid = '{}' ".format(config.SDB_EXPERIMENTS_PARTICIPANTS, expt_uid)
+        query = "SELECT * FROM {} WHERE expt_uid = '{}' ".format(self.participants_domain, expt_uid)
         results = []
         self.debug("Fetch results")
         qs = QuerySelect()
@@ -697,7 +711,7 @@ class Expt(object):
 
 class S3ResultsThreadJob(threading.Thread):
     """Retreive S3 results"""
-    region_name = config.AWS_DEFAULT_REGION
+    region_name = 'us-west-2'
 
     def __init__(self, i, in_queue, out_queue):
         threading.Thread.__init__(self)

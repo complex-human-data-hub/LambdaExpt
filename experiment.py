@@ -7,7 +7,7 @@ import json
 import MallExperiment as me
 from flask_s3 import FlaskS3
 from flask_compress import Compress
-
+import os
 from expt_config import get_data, s3_results_key
 import expt_config
 import config

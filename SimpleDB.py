@@ -3,7 +3,6 @@ from builtins import object
 import boto3
 import hashlib 
 from boto3.session import Session
-import config 
 
 class SimpleDBKeyInUseException(Exception):
     pass
@@ -11,7 +10,7 @@ class SimpleDBKeyInUseException(Exception):
 
 class BaseSimpleDB(object):
     domain = "default_domain"
-    region = config.AWS_DEFAULT_REGION
+    region = 'us-west-2'
     
     def _parse_attrs(self, attributes):
         attrs = {}

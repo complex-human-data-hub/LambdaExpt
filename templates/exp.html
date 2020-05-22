@@ -102,6 +102,32 @@
     timeline.push(welcome_block);
 
 
+    var plain_langauge_statement = {
+    type:'external-html',
+    url: "{{url_for('static', filename='html/plain-language-statement.html')}}",
+    cont_btn: "next",
+    data: {'part': 'statement'}
+    };
+
+    timeline.push(plain_langauge_statement);
+
+    // Consent
+    var consent = {
+    type:'external-html',
+    url: "{{url_for('static', filename='html/consent.html')}}",
+    cont_btn: "next",
+    check_fn: check_consent,
+    data: {'part': 'consent'},
+    on_finish:function(){
+            if(_rep===1&&_rep_on_consent===1){
+                _mark_rep_as_done();
+            }
+    }
+    };
+
+    timeline.push(consent);
+
+
     // declare the block.
     var trial = {
         type:'external-html',

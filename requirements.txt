@@ -3,3 +3,4 @@ flask
 zappa==0.48.2
 flask_s3
 flask-compress
+xmltodict

@@ -54,7 +54,7 @@
         for (var i = 0; i < test_list.length; i++){
             test_list[i]['intrial']  = intrial.hasOwnProperty(test_list[i]['token']) ;
         }
-    }    
+    };
 
     var send_debrief = function(data){
         if(_record_task_complete){
@@ -84,7 +84,7 @@
                 send_debrief(data);
             }, 1000);
         } 
-    }
+    };
 
 
 
@@ -186,7 +186,7 @@
 					required: true
 				}
 			]
-		},
+		}
 	];
 
 
@@ -205,7 +205,7 @@
 			type: 'survey-multi-choice',
 			questions: study_documents[i].questions,
             data: {'part': 'comprehension'}
-		}
+		};
 
     	timeline.push(comprehension);
 		
@@ -215,7 +215,7 @@
 
 	/* Show Study List */
 	study_list = expt_data.study_list;
-    add_stimulus_text(study_list) 
+    add_stimulus_text(study_list);
     var study_node = {
         timeline_variables: study_list,
         timeline: [
@@ -228,7 +228,7 @@
                 data: {'part': 'trial_list', 'token': jsPsych.timelineVariable('token') }
             }
         ]
-    }
+    };
 
     timeline.push(study_node);
 
@@ -264,7 +264,7 @@
                 }
             }
         ]
-    }
+    };
 
     timeline.push(test_node);
     

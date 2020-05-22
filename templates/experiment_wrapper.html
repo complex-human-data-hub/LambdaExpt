@@ -66,11 +66,23 @@
         var ua = navigator.userAgent;
         var click_event_type = (ua.match(/iPad/i)) ? "touchstart" : "click";
         var _record_task_complete = false;
+        var _rep = {{ rep or 'undefined' }};
+        {% if rep %}
+            {% if rep_on_consent %}
+                var _rep_on_consent = 1;
+            {% else %}
+                var _rep_on_consent = 0;
+            {% endif %}
+        {% else %}
+            var _rep_on_consent;
+        {% endif %}
+        var _survey_code = {{ survey_code or 'undefined' }};
+        var _uid = "{{uid}}" ;
+
         var _send_task_data = function(expt_data){
             // Finish task and sent data back to server
 			//$(".expt-pop-outer").fadeIn("slow");
             _display_loader("Saving experiment data...");
-            var _uid = "{{uid}}" ;
             var _uend_time_local = new Date();
             var _failed_ajax = "Sorry an error has occurred, and your task has not been recorded. Please inform the researcher."
 			
@@ -99,20 +111,42 @@
                     }else{
                         alert(failed_ajax + ": 1");
                     }
-                    _record_task_complete = true;
-					//$(".expt-pop-outer").fadeOut("slow");
-                    _hide_loader();
                 },
                 error: function (jqXHR, textStatus, errorThrown){
                     alert(_failed_ajax + ": 2");
-                    _record_task_complete = true;
-					//$(".expt-pop-outer").fadeOut("slow");
+                },
+                complete: function(jqXHR, textStatus ){
                     _hide_loader();
+                    if(_rep===1&&_rep_on_consent===0){
+                        //Need to delay _record_task_complete until after
+                        //_mark_rep_as_done finished if REP and not on consent (i.e., credit at end of experiment)
+                        _mark_rep_as_done();
+                    }else{
+                        _record_task_complete = true;
+                    }
+					//$(".expt-pop-outer").fadeOut("slow");
                 }
             });
-
+        };
+        var _mark_rep_as_done = function(){
+            $.ajax({
+                type: 'GET',
+                url: '/mark-rep-as-done?survey_code=' + _survey_code + '&uid=' + _uid,
+				//async: false,
+                success: function (data) {
+                        //alert("Your REP has been marked as done");
+                },
+                error: function (jqXHR, textStatus, errorThrown){
+                    alert("Your REP has not been updated,Here is the error message:\n"+jqXHR.responseText);
+                },
+                complete: function(jqXHR, textStatus ){
+                    if(_rep===1&&_rep_on_consent===0){
+                        //Delayed set _record_task_complete
+                        _record_task_complete = true;
+                    }
+                }
+            });
         }
-
       </script>
 
       {% block body %}

@@ -31,9 +31,12 @@
                 <h2>Thank you for participating in this experiment.</h2>
                 <div class="exp-document-container">
                     <div class="survey_code_container">
-                    <h4>Enter this Unique Code for the HIT on the mturk website:</h4>
-                    <p id="mturk_survey_code">{{mturk_survey_code}}</p>
+                    {% if mturk_survey_code %}
+                    <div class="survey_code_container">
+                        <h4>Enter this Unique Code for the HIT on the mturk website:</h4>
+                        <p id="mturk_survey_code">{{mturk_survey_code}}</p>
                     </div>
+                    {% endif %}
                     <div style="margin-top:60px;"></div>
 
                     <p>If you would like to know more about this experiment, then <a href="/full-debrief" target="_blank">click here to read more</a>.</p>

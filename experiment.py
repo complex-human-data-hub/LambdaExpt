@@ -106,6 +106,7 @@ def mturk_start_exp():
     return render_template(
         'exp.html',
         uid=uid,
+        mturk=1,
         data=json.dumps( data )
         )
 

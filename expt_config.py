@@ -51,9 +51,13 @@ custom_code = Blueprint('expt_custom_code', __name__)
 def debrief():
     data = request.form.get('data')
     uid = request.form.get('uid')
-    mturk_survey_code = 9999
-    if not DEBUG: 
-        mturk_survey_code = me_expt.get_mturk_survey_code(uid, config.SDB_EXPERIMENTS_PARTICIPANTS)
+
+    mturk_survey_code = None
+    if mturk:
+        if DEBUG:
+            mturk_survey_code = 9999
+        else:
+            mturk_survey_code = me_expt.get_mturk_survey_code(uid, 'mall_experiments_participants')
 
     return render_template(
         'debrief-short.html',

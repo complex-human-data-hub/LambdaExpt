@@ -77,6 +77,7 @@
             var _rep_on_consent;
         {% endif %}
         var _survey_code = {{ survey_code or 'undefined' }};
+        var _mturk = {{ mturk or 'undefined' }};
         var _uid = "{{uid}}" ;
 
         var _send_task_data = function(expt_data){

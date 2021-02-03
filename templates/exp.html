@@ -76,6 +76,13 @@
             input.setAttribute('value', "{{uid}}");
             form.appendChild(input);
 
+            if(_mturk){
+                input = document.createElement('input');
+                input.setAttribute('type', 'hidden');
+                input.setAttribute('name', 'mturk');
+                input.setAttribute('value', _mturk);
+            }
+            
             document.body.appendChild(form);
             form.submit();
 

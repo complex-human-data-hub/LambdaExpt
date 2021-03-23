@@ -51,6 +51,7 @@ custom_code = Blueprint('expt_custom_code', __name__)
 def debrief():
     data = request.form.get('data')
     uid = request.form.get('uid')
+    mturk = request.form.get('mturk')
 
     mturk_survey_code = None
     if mturk:

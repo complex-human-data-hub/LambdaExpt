@@ -3,6 +3,13 @@ LambdaExpt is a framework for running Psychology Experiments on Amazon Web Servi
 Below gives you a brief over of how to use the framework, please read the wiki for more detail:
 https://github.com/complex-human-data-hub/LambdaExpt/wiki
 
+INSTALLATION (linux)
+=====================
+python3 -m venv venv
+source venv/bin/activate
+pip install pip --upgrade
+pip install -r requirements.txt
+
 
 STARTING THE LOCAL SERVER
 =========================

@@ -5,7 +5,7 @@ from user_utils import nocache, restrictions
 import json
 import MallExperiment as me
 from flask_s3 import FlaskS3
-from flask_compress import Compress
+#from flask_compress import Compress
 import os
 from expt_config import get_data, s3_results_key
 import expt_config
@@ -43,7 +43,7 @@ if not DEBUG:
 expt_common_blueprint = me_expt.expt_common_blueprint(s3_data_bucket, s3_results_key, debug=DEBUG)
 app.register_blueprint(expt_common_blueprint)
 
-Compress(app)
+#Compress(app)
 
 if hasattr(expt_config, 'custom_code'):
     from expt_config import custom_code

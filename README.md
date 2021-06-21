@@ -1,6 +1,6 @@
 LambdaExpt is a framework for running Psychology Experiments on Amazon Web Services Lambdas. These lambdas allow us to both run experiments cheaply and at scale. This framework has been developed by the Complex Human Data Hub at the University of Melbourne. It can be used to run individual experiments, experiments on Mechanical Turk, and Research For Experience (REP) experiments.
 
-Below gives you a brief over of how to use the framework, please read the wiki for more detail:
+Below gives you a brief over of how to use the framework, <b>please read the wiki for more detailed documentation</b>:
 https://github.com/complex-human-data-hub/LambdaExpt/wiki
 
 ## INSTALLATION

@@ -3,48 +3,61 @@ LambdaExpt is a framework for running Psychology Experiments on Amazon Web Servi
 Below gives you a brief over of how to use the framework, please read the wiki for more detail:
 https://github.com/complex-human-data-hub/LambdaExpt/wiki
 
-INSTALLATION (linux)
-=====================
+## INSTALLATION
+### Linux
+```
 python3 -m venv venv
 source venv/bin/activate
 pip install pip --upgrade
 pip install -r requirements.txt
+```
 
+### Windows
+```
+python3 -m venv venv
+.\venv\Scripts\activate
+pip install pip --upgrade
+pip install -r requirements.txt
+```
 
-STARTING THE LOCAL SERVER
-=========================
-# To develop run flask server locally
+## STARTING THE LOCAL SERVER
+### To develop run flask server locally
+#### Linux
+```
 FLASK_APP=experiment.py flask run
+```
 
+#### Windows 
+```
+python experiment.py
+```
 
-ACCESSING YOUR EXPERIMENT
-=========================
+## ACCESSING YOUR EXPERIMENT
 If you are developing locally the change to a localhost address, for example:
-http://localhost:5000/unique-expt
+```http://localhost:5000/unique-expt```
 
 or in production:
-https://example.com/unique-expt
+```https://example.com/unique-expt```
 
 
-ADDING PARAMETERS TO PASS TO PYTHON
-===================================
+## ADDING PARAMETERS TO PASS TO PYTHON
 You can also add parameters to pass to the get_data(opts) function mentioned below:
 http://localhost:5000/expt?unique-expt?foo=bar&foo2=bar2
 or
 https://example.com/unique-expt?foo=bar&foo2=bar2
 
 
-BASIC STRUCTURE OF YOUR EXPERIMENT
-==================================
-* expt_config.py
-This is where your python code goes. You will setup your experimental stimuli in this file. 
+## BASIC STRUCTURE OF YOUR EXPERIMENT
+* expt_config.py - this is where your python code goes. You will setup your experimental stimuli in this file. 
 
 You can optionally provide a flask Blueprint using the 'custom_code' variable. Flask Blueprints allow you to define your own routes. 
 
-FUNCTIONS:
+### Functions in expt_config.py:
+```
   get_data(opts)
     foo = opts.get('foo')
     return object_to_pass_to_javascript
+```
 
 * templates/exp.html
 This is were you will create your experiments HTML

@@ -5,6 +5,7 @@
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
       <script type="application/javascript">
         var STATIC_DIR = "{{url_for('static', filename='')}}";
+        var _rep;
       </script>
 	{% block extra_head %}{%endblock%}
   </head>
@@ -66,7 +67,7 @@
         var ua = navigator.userAgent;
         var click_event_type = (ua.match(/iPad/i)) ? "touchstart" : "click";
         var _record_task_complete = false;
-        var _rep = {{ rep or 'undefined' }};
+        _rep = {{ rep or 'undefined' }};
         {% if rep %}
             {% if rep_on_consent %}
                 var _rep_on_consent = 1;

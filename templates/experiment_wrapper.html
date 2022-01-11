@@ -86,8 +86,9 @@
 			//$(".expt-pop-outer").fadeIn("slow");
             _display_loader("Saving experiment data...");
             var _uend_time_local = new Date();
-            var _failed_ajax = "Sorry an error has occurred, and your task has not been recorded. Please inform the researcher."
-			
+            var manual_results_filename = "results-" +  _uid +  ".json";
+			var _failed_ajax = "Sorry an error has occurred, and your results have not been uploaded. A file download of " + manual_results_filename + " will start next. You will need to send results.json to the researcher. Please click OK.";
+
 			if(typeof(expt_data) !== 'string'){
 				expt_data = JSON.stringify( expt_data );
 			}
@@ -111,11 +112,13 @@
                     if(data['status'] == 'success'){
                         //alert("Your record has been updated");
                     }else{
-                        alert(failed_ajax + ": 1");
+                        alert(_failed_ajax + ": 1");
+                        manual_download(JSON.stringify(_data), manual_results_filename, 'application/json');
                     }
                 },
                 error: function (jqXHR, textStatus, errorThrown){
                     alert(_failed_ajax + ": 2");
+                    manual_download(JSON.stringify(_data), manual_results_filename, 'application/json');
                 },
                 complete: function(jqXHR, textStatus ){
                     _hide_loader();
@@ -130,6 +133,28 @@
                 }
             });
         };
+
+
+        function manual_download(data, filename, type) {
+            var file = new Blob([data], {type: type});
+            if (window.navigator.msSaveOrOpenBlob) // IE10+
+                window.navigator.msSaveOrOpenBlob(file, filename);
+            else { // Others
+                var a = document.createElement("a"),
+                        url = URL.createObjectURL(file);
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                setTimeout(function() {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 0);
+            }
+        }
+
+
+
         var _mark_rep_as_done = function(){
             $.ajax({
                 type: 'GET',

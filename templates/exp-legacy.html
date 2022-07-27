@@ -3,14 +3,13 @@
 {% block title %} Experiment {% endblock %}
 
 {% block extra_head %}
-    <script src="{{url_for('static', filename='jsPsychCurrent/jspsych.js')}}" type="text/javascript"></script>
-    <script src="{{url_for('static', filename='jsPsychCurrent/plugin-html-keyboard-response.js')}}" type="text/javascript"></script>
-    <script src="{{url_for('static', filename='jsPsychCurrent/plugin-image-keyboard-response.js')}}" type="text/javascript"></script>
-    <script src="{{url_for('static', filename='jsPsychCurrent/plugin-survey-multi-choice.js')}}" type="text/javascript"></script>
-    <script src="{{url_for('static', filename='jsPsychCurrent/plugin-external-html.js')}}" type="text/javascript"></script>
-
-
-    <link rel="stylesheet" href="{{url_for('static', filename='jsPsychCurrent/jspsych.css')}}" type="text/css"></link>
+    <script src="{{url_for('static', filename='jspsych/jspsych.js')}}" type="text/javascript"></script>
+    <script src="{{url_for('static', filename='jspsych/plugins/jspsych-html-keyboard-response.js')}}" type="text/javascript"></script>
+    <script src="{{url_for('static', filename='jspsych/plugins/jspsych-image-keyboard-response.js')}}" type="text/javascript"></script>
+    <script src="{{url_for('static', filename='jspsych/plugins/jspsych-survey-multi-choice.js')}}" type="text/javascript"></script>    
+    <script src="{{url_for('static', filename='jspsych/plugins/jspsych-game-rat-skill.js')}}" type="text/javascript"></script>    
+	<script src="{{url_for('static', filename='jspsych/plugins/jspsych-external-html.js')}}" type="text/javascript"></script>
+    <link rel="stylesheet" href="{{url_for('static', filename='jspsych/css/jspsych.css')}}" type="text/css"></link>
     <link rel="stylesheet" href="{{url_for('static', filename='css/experiment.css')}}" type="text/css"></link>
 
     <style>
@@ -38,30 +37,6 @@
   <script>
     var expt_data = {{data|safe}};
     console.log(expt_data);
-
-
-    const jsPsych = initJsPsych({
-      timeline: timeline,
-      display_element: 'jspsych-target',
-      on_finish: function() {
-        // jsPsych.displayData will print your data on the page.
-        // if you want to see it, comment out send_debrief() otherwise 
-        // it'll send you through to another page before you have a chance to 
-        // look at the data  
-        //
-        jsPsych.data.displayData();
-
-        // To save your data you would uncomment the 
-        // code below 
-        // 
-        //var all_data = jsPsych.data.get().json();
-        //_send_task_data(all_data);
-        //send_debrief();
-      },
-      default_iti: 250
-    });
-
-
 
     /* Helper functions */
     var add_stimulus_text = function(word_list){
@@ -139,7 +114,7 @@
 
     /* define welcome message trial */
     var welcome_block = {
-      type: jsPsychHtmlKeyboardResponse,
+      type: "html-keyboard-response",
       stimulus: "Welcome to the experiment. Press any key to begin.",
       on_start: function(trial) { $( "#jspsych-target" ).focus(); },
       data: {'part': 'welcome'}
@@ -148,7 +123,7 @@
 
 
     var plain_langauge_statement = {
-    type: jsPsychExternalHtml,
+    type:'external-html',
     url: "{{url_for('static', filename='html/plain-language-statement.html')}}",
     cont_btn: "next",
     data: {'part': 'statement'}
@@ -158,7 +133,7 @@
 
     // Consent
     var consent = {
-    type: jsPsychExternalHtml,
+    type:'external-html',
     url: "{{url_for('static', filename='html/consent.html')}}",
     cont_btn: "next",
     check_fn: check_consent,
@@ -175,7 +150,7 @@
 
     // declare the block.
     var trial = {
-        type: jsPsychExternalHtml,
+        type:'external-html',
         url: "{{url_for('static', filename='html/instructions.html')}}",
         cont_btn: "read_instructions",
         data: {'part': 'instructions'}
@@ -264,7 +239,7 @@
 	/* Display Study Documents and test comprehension */
 	for (var i = 0; i < study_documents.length; i++){
 		var trial = {
-			type: jsPsychExternalHtml,
+			type:'external-html',
 			url: study_documents[study_document_order[i]].url,
 			cont_btn: "next",
             data: {'part': 'view_document'}
@@ -273,7 +248,7 @@
     	timeline.push(trial);
 
 		var comprehension = {
-			type: jsPsychSurveyMultiChoice,
+			type: 'survey-multi-choice',
 			questions: study_documents[i].questions,
             data: {'part': 'comprehension'}
 		};
@@ -292,9 +267,9 @@
         timeline: [
             {
                 description: 'Trial List',
-                type: jsPsychHtmlKeyboardResponse,
+                type: 'html-keyboard-response',
                 stimulus: jsPsych.timelineVariable('stimulus'),
-                choices: "NO_KEYS",
+                choices: jsPsych.NO_KEYS,
                 trial_duration: 2000,
                 data: {'part': 'trial_list', 'token': jsPsych.timelineVariable('token') }
             }
@@ -304,12 +279,12 @@
     timeline.push(study_node);
 
     // card game
-    //timeline.push({
-    //    type: 'game-rat-skill',
-    //    card_delay: 1200, //1200,
-    //    game_duration: 45, // 45
-    //    data: {'part': 'card_game'}
-    //});
+    timeline.push({
+        type: 'game-rat-skill',
+        card_delay: 1200, //1200,
+        game_duration: 45, // 45
+        data: {'part': 'card_game'}
+    });
 
 
     /* Show Test List */
@@ -322,7 +297,7 @@
         timeline: [
             {
                 description: 'Test List',
-                type: jsPsychHtmlKeyboardResponse,
+                type: 'html-keyboard-response',
                 stimulus: jsPsych.timelineVariable('stimulus'),
                 choices: ['y', 'n'],
                 on_start: function(trial) { $( "#jspsych-target" ).focus(); },
@@ -341,7 +316,27 @@
     
 
     /* start the experiment */
-    jsPsych.run(timeline);	
+    jsPsych.init({
+      timeline: timeline,
+      display_element: 'jspsych-target',
+      on_finish: function() {
+        // jsPsych.displayData will print your data on the page.
+        // if you want to see it, comment out send_debrief() otherwise 
+        // it'll send you through to another page before you have a chance to 
+        // look at the data  
+        //
+        jsPsych.data.displayData();
+
+        // To save your data you would uncomment the 
+        // code below 
+        // 
+        //var all_data = jsPsych.data.get().json();
+        //_send_task_data(all_data);
+        //send_debrief();
+      },
+      default_iti: 250
+    });
+	
   </script>
 
 {% endblock %}

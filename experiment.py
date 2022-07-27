@@ -31,6 +31,10 @@ s3_data_bucket = "chdhexpt"
 
 me_expt = me.Expt(domain=config.SDB_EXPERIMENTS_PARTICIPANTS)
 
+exp_html_template = 'exp.html'
+if not config.jsPsychCurrent:
+    # Use jsPsych v6
+    exp_html_template = 'exp-legacy.html'
 
 
 app = Flask("Experiment_Server", static_folder=static_folder)
@@ -74,8 +78,9 @@ def unique_start_exp():
         return render_template('error-page.html',error=data['_error'])
     
     return render_template(
-        'exp.html',
+        exp_html_template,
         uid=uid,
+        jsPsychCurrent=config.jsPsychCurrent,
         data=json.dumps( data )
         )
 
@@ -91,6 +96,7 @@ def mturk_start_exp():
     (uid, error) = me_expt.start_mturk_expt(
             request,
             expt_uid=expt_uid,
+            jsPsychCurrent=config.jsPsychCurrent,
             debug=DEBUG
             )
 
@@ -104,7 +110,7 @@ def mturk_start_exp():
         return render_template('error-page.html',error=data['_error'])
 
     return render_template(
-        'exp.html',
+        exp_html_template,
         uid=uid,
         mturk=1,
         data=json.dumps( data )
@@ -157,6 +163,7 @@ def enter_rep_expt():
     (uid, error) = me_expt.create_unique_participant(
         request,
         expt_uid=expt_uid,
+        jsPsychCurrent=config.jsPsychCurrent,
         custom_attrs=custom_attrs,
         debug=DEBUG
     )
@@ -169,7 +176,7 @@ def enter_rep_expt():
         return render_template('error-page.html', error=data['_error'])
 
     return render_template(
-        'exp.html',
+        exp_html_template,
         uid=uid,
         rep=1,
         survey_code=survey_code,
@@ -193,7 +200,7 @@ def rep_start_expt():
 
     data = me_expt.check_set_participant_attrs(uid, get_data(request.args), DEBUG)
     return render_template(
-        'exp.html',
+        exp_html_template,
         uid=uid,
         rep=1,
         data=json.dumps(data)
@@ -225,7 +232,7 @@ def start_exp():
         return render_template('error-page.html',error=data['_error'])
 
     return render_template(
-        'exp.html',
+        exp_html_template,
         uid=uid,
         data=json.dumps( data )
         )

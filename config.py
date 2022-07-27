@@ -1,6 +1,8 @@
 from __future__ import print_function
 from os import getenv
 
+jsPsychCurrent = True # Use the latest jsPsych, else use jsPsych 6
+
 NAME="ExampleExperiment"
 EXPT_UID="UniqueID"
 RESULTS_DIR="2020/ExampleExperiment/results"

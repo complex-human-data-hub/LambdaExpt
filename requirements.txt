@@ -1,4 +1,5 @@
 pip
+future
 flask
 zappa
 flask_s3

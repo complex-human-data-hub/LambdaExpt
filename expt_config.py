@@ -52,6 +52,7 @@ def debrief():
     data = request.form.get('data')
     uid = request.form.get('uid')
     mturk = request.form.get('mturk')
+    prolific = request.form.get('prolific')
 
     mturk_survey_code = None
     if mturk:
@@ -60,9 +61,14 @@ def debrief():
         else:
             mturk_survey_code = me_expt.get_mturk_survey_code(uid, 'mall_experiments_participants')
 
+    prolific_completion_code = None
+    if prolific:
+        prolific_completion_code = config.PROLIFIC_COMPLETION_CODE
+
     return render_template(
         'debrief-short.html',
         mturk_survey_code=mturk_survey_code,
+        prolific_completion_code=prolific_completion_code
         )
 
 

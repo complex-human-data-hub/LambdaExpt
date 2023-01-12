@@ -25,6 +25,7 @@ import time
 import string 
 import logging
 import sys 
+import zipfile
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -111,6 +112,31 @@ class Expt(object):
                 return jsonify(res)
 
         return expt_common_blueprint
+
+        @expt_common_blueprint.route('/record-task-compressed', methods=['POST'])
+        def record_task_compressed():
+            if request.method == 'POST':
+                file_like_object = request.files['data'].stream._file
+                zipfile_ob = zipfile.ZipFile(file_like_object)
+                data = zipfile_ob.open('data.json').read()
+                if not isinstance(data, str):
+                    data = data.decode('utf8')
+
+                res = json.loads(data)
+                req = MyObject(form=res)
+
+                uid = req.form['uid']
+                logger.info("record_task: [{}]".format(uid))
+                res = self.complete_expt(
+                    req,
+                    uid=uid,
+                    results_bucket=s3_data_bucket,
+                    results_key=s3_results_key.format(uid),
+                    debug=debug
+                    )
+
+                logger.info("record_task response: [{}] {}".format(uid, res))
+                return jsonify(res)
 
 
     def _getS3Client(self):
@@ -426,6 +452,79 @@ class Expt(object):
         attrs['cloudfront_country'] = request.headers.get('CloudFront-Viewer-Country', '') 
         attrs['cloudfront_device'] = self.get_cloudfront_device(request)
         attrs['ip'] = self.get_client_ip(request)
+
+
+    def start_prolific_expt(self, request, expt_uid=None, domain=None, debug=False, request_attrs=[]):
+        try:
+            if not domain:
+                domain = self.participants_domain
+
+            condition = request.args.get('condition')
+
+            study_id = request.args.get('STUDY_ID')
+            prolific_id = request.args.get('PROLIFIC_PID')
+            session_id = request.args.get('SESSION_ID')
+
+            if not (study_id or prolific_id or session_id):
+                return (None, self.return_error('worker-accept-hit.html'))
+
+            rec = Record(domain='mall_experiments')
+            expt = rec.fetch(expt_uid)
+            if not expt:
+                return (None, self.return_error('404.html'))
+
+
+            participant_key = self.make_key(
+                    prolific_id,
+                    expt['uid'],
+                    expt['codeversion'],
+                    (condition or expt['trial'])
+                    )
+            
+            
+            participant = Record(domain=domain, key=participant_key)
+            attrs = {
+                'uid': participant_key,
+                'expt_uid': expt['uid'],
+                'codeversion': expt['codeversion'],
+                'trial': (condition or expt['trial']),
+                'created': datetime.now().strftime(DATESTRING_FORMAT),
+                'start': datetime.now().strftime(DATESTRING_FORMAT),
+                'status': STARTED,
+                'prolific_id': prolific_id,
+                'session_id': session_id,
+                'study_id': study_id
+                    }
+
+            self.add_headers(request, attrs)
+
+            #insert custom attributes
+            for key in request_attrs:
+                if not attrs.get(key):
+                    value = request.args.get(key)
+                    if value:
+                        attrs[key] = value
+
+            participant.set_attributes(attrs, True)
+            participant.update()
+
+            return (participant_key, None)
+
+
+        except SimpleDBKeyInUseException as e:
+            if debug:
+                print("Debug ({}) has already attempted this study".format(str(e)))
+                return (str(e), None)
+            else:
+                return (None, self.return_error("worker-error.html", "study_repeat"))
+
+        except Exception as e:
+            if debug:
+                print("Debug catch error. Erros: '" + str(e) + "'. If you are writing a new experiment and this error says that you have an invalid AWS Access Key, then don't worry when you go live with the experiment Ben will use a valid key. ")
+            else:
+                raise Exception(e)
+
+        return (None, self.return_error('500.html'))
 
 
     def start_mturk_expt(self, request, expt_uid=None, domain=None, debug=False, request_attrs=[]):

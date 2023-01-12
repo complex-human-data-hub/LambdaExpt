@@ -3,6 +3,7 @@
   <head>
       <title>{% block title %}{%endblock%}</title>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.2.4/jquery.min.js"></script>
+    <script src="{{url_for('static', filename='js/zip.min.js')}}"></script>
       <script type="application/javascript">
         var STATIC_DIR = "{{url_for('static', filename='')}}";
         var _rep;
@@ -55,6 +56,15 @@
       
       <script type="application/javascript">
 
+        const zipProcessedData = async (processed_data) => {
+            let blobWriter = new zip.BlobWriter("application/zip");
+            let writer = new zip.ZipWriter(blobWriter);
+            await writer.add("data.json", new zip.TextReader(processed_data));
+            await writer.close();
+            let blob = await blobWriter.getData();
+            return blob;
+        };
+
         function _display_loader(msg){
             $(".expt-pop-outer h3").text(msg);
             $(".expt-pop-outer").fadeIn("slow");
@@ -79,9 +89,10 @@
         {% endif %}
         var _survey_code = {{ survey_code or 'undefined' }};
         var _mturk = {{ mturk or 'undefined' }};
+        var _prolific = {{ prolific or 'undefined' }};
         var _uid = "{{uid}}" ;
 
-        var _send_task_data = function(expt_data){
+        async function _send_task_data(expt_data, compressed=false){
             // Finish task and sent data back to server
 			//$(".expt-pop-outer").fadeIn("slow");
             _display_loader("Saving experiment data...");
@@ -102,11 +113,31 @@
             };
 
 
+            var formData;
+            var record_url = '/record-task';
+            var contentType = 'application/x-www-form-urlencoded; charset=UTF-8'
+            var processData = true;
+            if (compressed){
+                // compress the payload
+                let blob = await zipProcessedData(JSON.stringify(_data));
+
+                formData = new FormData();
+                formData.append('data', blob);
+                record_url = '/record-task-compressed';
+                processData = false;
+                contentType = false;
+            }else{
+                formData = _data;
+            }
+
+
             $.ajax({
                 type: 'POST',
-                url: '/record-task',
-                data: _data ,
+                url: record_url,
+                data: formData,
                 dataType: 'json',
+                processData: processData,
+                contentType: contentType,                
 				//async: false,
                 success: function (data) {
                     if(data['status'] == 'success'){

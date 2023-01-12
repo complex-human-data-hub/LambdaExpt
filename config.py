@@ -7,6 +7,8 @@ NAME="ExampleExperiment"
 EXPT_UID="UniqueID"
 RESULTS_DIR="2020/ExampleExperiment/results"
 
+PROLIFIC_COMPLETION_CODE = None
+
 # Restrict device on AWS
 RESTRICTIONS = [] # ["IE", "mobile", "tablet", "tv"]
 

@@ -84,6 +84,38 @@ def unique_start_exp():
         data=json.dumps( data )
         )
 
+    
+@app.route('/prolific', methods=['GET'])
+@nocache
+@restrictions
+def prolific_start_exp():
+    if not 'PROLIFIC_PID' in request.args:
+        raise Exception("Unique ID not provided")
+
+    # Record particpant starting experiment
+    (uid, error) = me_expt.start_prolific_expt(
+            request,
+            expt_uid=expt_uid,
+            jsPsychCurrent=config.jsPsychCurrent,
+            debug=DEBUG
+            )
+
+    if error:
+        print(error)
+        return render_template(error['template'], **error)
+
+    data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG ) 
+
+    if data.get('_error') != None:
+        return render_template('error-page.html',error=data['_error'])
+
+    return render_template(
+        exp_html_template,
+        uid=uid,
+        prolific=1,
+        data=json.dumps( data )
+        )
+
 
 @app.route('/mturk-expt', methods=['GET'])
 @nocache

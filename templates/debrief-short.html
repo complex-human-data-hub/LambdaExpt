@@ -36,6 +36,11 @@
                         <h4>Enter this Unique Code for the HIT on the mturk website:</h4>
                         <p id="mturk_survey_code">{{mturk_survey_code}}</p>
                     </div>
+                    {% elif prolific_completion_code %}
+                    <div class="survey_code_container">
+                        <h4>Enter this Completion Code on Prolific:</h4>
+                        <p id="prolific_completion_code">{{prolific_completion_code}}</p>
+                    </div>                    
                     {% endif %}
                     <div style="margin-top:60px;"></div>
 

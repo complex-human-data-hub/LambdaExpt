@@ -107,6 +107,12 @@
                 input.setAttribute('name', 'mturk');
                 input.setAttribute('value', _mturk);
                 form.appendChild(input);
+            }else if(_prolific){
+                input = document.createElement('input');
+                input.setAttribute('type', 'hidden');
+                input.setAttribute('name', 'prolific');
+                input.setAttribute('value', _prolific);
+                form.appendChild(input);
             }
             
             document.body.appendChild(form);

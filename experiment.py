@@ -96,7 +96,6 @@ def prolific_start_exp():
     (uid, error) = me_expt.start_prolific_expt(
             request,
             expt_uid=expt_uid,
-            jsPsychCurrent=config.jsPsychCurrent,
             debug=DEBUG
             )
 
@@ -128,7 +127,6 @@ def mturk_start_exp():
     (uid, error) = me_expt.start_mturk_expt(
             request,
             expt_uid=expt_uid,
-            jsPsychCurrent=config.jsPsychCurrent,
             debug=DEBUG
             )
 
@@ -195,7 +193,6 @@ def enter_rep_expt():
     (uid, error) = me_expt.create_unique_participant(
         request,
         expt_uid=expt_uid,
-        jsPsychCurrent=config.jsPsychCurrent,
         custom_attrs=custom_attrs,
         debug=DEBUG
     )

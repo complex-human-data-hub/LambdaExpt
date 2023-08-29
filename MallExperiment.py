@@ -22,9 +22,10 @@ import random
 import threading
 import queue
 import time
-import string 
 import logging
 import sys 
+import jwt
+from os import getenv
 import zipfile
 
 logger = logging.getLogger()
@@ -74,6 +75,12 @@ DATESTRING_FORMAT = "%Y-%m-%dT%H:%M:%S"
 
 MAX_NUMBER_OF_THREADS = 20
 
+class MyObject:
+    def __init__(self, *args, **kwargs):
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+
+
 class MallExperiment(Exception):
     pass
 
@@ -85,7 +92,9 @@ class Expt(object):
     domain='mall_experiments'  
     experiments_domain='mall_experiments'
     participants_domain='mall_experiments_participants'
-                                
+
+    qualtrics_encrypt_key = getenv('QualtricsKey', default="<YOUR_SECRET_HERE>")
+
     def __init__(self, **kwargs):
         for k in kwargs:
             setattr(self, k, kwargs[k])
@@ -111,8 +120,6 @@ class Expt(object):
                 logger.info("record_task response: [{}] {}".format(uid, res))
                 return jsonify(res)
 
-        return expt_common_blueprint
-
         @expt_common_blueprint.route('/record-task-compressed', methods=['POST'])
         def record_task_compressed():
             if request.method == 'POST':
@@ -121,7 +128,7 @@ class Expt(object):
                 data = zipfile_ob.open('data.json').read()
                 if not isinstance(data, str):
                     data = data.decode('utf8')
-
+               
                 res = json.loads(data)
                 req = MyObject(form=res)
 
@@ -137,6 +144,8 @@ class Expt(object):
 
                 logger.info("record_task response: [{}] {}".format(uid, res))
                 return jsonify(res)
+
+        return expt_common_blueprint
 
 
     def _getS3Client(self):
@@ -361,7 +370,7 @@ class Expt(object):
         #print "Excluding: {}".format(exclude_expt)
         #exclude_expt is a comma separated 
         #string of expt_uids to exclude
-        excludes = ", ".join( map( "'{}'".format, list(map(string.strip,  exclude_expt.split(",") )) ) )
+        excludes = ", ".join( map( "'{}'".format, list(map(self.string_strip,  exclude_expt.split(",") )) ) )
         query = "SELECT count(*) FROM {} WHERE worker_id = '{}' AND expt_uid IN ({}) ".format(self.participants_domain, worker_id, excludes)  
        
         
@@ -377,15 +386,99 @@ class Expt(object):
         return True
 
         
-        
+    def string_strip(self, s):
+        return s.strip()
+
+
+    def complete_qualtrics_experiment(self, request):
+        logger.info("complete_qualtrics_experiment")
+        qualtrics_token = request.args.get('qualtricsToken')
+        random_id = request.args.get('randomId') 
+        qualtrics_survey_url = request.args.get('qualtricsSurveyUrl') 
+        qualtrics_survey_url2 = request.args.get('qualtricsSurveyUrl2') 
+        qualtrics_survey_url3 = request.args.get('qualtricsSurveyUrl3') 
+
+        logger.info({
+            'qualtrics_token': qualtrics_token,
+            'random_id': random_id,
+            'qualtrics_survey_url': qualtrics_survey_url,
+            'qualtrics_survey_url2': qualtrics_survey_url2,
+            'qualtrics_survey_url3': qualtrics_survey_url3,
+            })
+
+        try:
+            decoded_token = jwt.decode(qualtrics_token, self.qualtrics_encrypt_key, algorithms="HS256")
+            logger.info(decoded_token)
+
+            expt_uid = decoded_token.get('expt_uid')
+
+            # Check that HIT attributes match our encoded version
+            for x in ["hitId", "workerId", "assignmentId"]:
+                if request.args.get(x) != decoded_token.get(x):
+                    print("Didn't find {}".format(x))
+                    return False
+
+            # Make sure we have a 
+            if not random_id:
+                print("Didn't find random ID")
+                return False
+
+            # Create a db entry for the HIT
+            (participant, error) = self.start_mturk_expt(request, expt_uid=expt_uid, return_record=True) 
+
+            if error:
+                return False
+
+            # Set mturk_survey_code for assignment  
+            # Close off the experiment here too
+            attrs = {
+                    'mturk_survey_code': random_id,
+                    'status': COMPLETED,
+                    'qualtrics_survey': qualtrics_survey_url,
+                    'end': datetime.now().strftime(DATESTRING_FORMAT),
+                    }
+
+            self.add_headers(request, attrs)
+
+
+            participant.set_attributes(attrs, True)
+            participant.update()
+        except Exception as err:
+            logger.error(str(err))
+            return False
+
+        return random_id
+                
+
+    def create_qualtrics_token(self, request, expt_uid=None):
+        hit_id = request.args.get('hitId')
+        worker_id = request.args.get('workerId')
+        assignment_id = request.args.get('assignmentId')
+
+        encoded = jwt.encode({
+            "hitId": hit_id,
+            "workerId": worker_id,
+            "assignmentId": assignment_id,
+            "expt_uid": expt_uid,
+            }, self.qualtrics_encrypt_key, algorithm="HS256")
+        return encoded
+
 
     def check_unique_participant(self, request, expt_uid=None, domain=None):
         try:
             #print "check_unique_participant"
+            logger.info("check_unique_participant")
             hit_id = request.args.get('hitId')
             worker_id = request.args.get('workerId')
             assignment_id = request.args.get('assignmentId')
             condition = request.args.get('condition') 
+            logger.info({
+                'hit_id': hit_id,
+                'worker_id': worker_id,
+                'assignment_id': assignment_id,
+                'condition': condition
+                })
+
             if not (hit_id or worker_id or assignment_id):
                 #print "return False: not (hit_id or worker_id or assignment_id)"
                 return False, None
@@ -393,7 +486,7 @@ class Expt(object):
             rec = Record(domain='mall_experiments')
             expt = rec.fetch(expt_uid)
             if not expt:
-                #print "return False: not expt"
+                #print ("return False: not expt")
                 return False, None
 
             # Will throw SimpleDBKeyInUseException 
@@ -480,8 +573,8 @@ class Expt(object):
                     expt['codeversion'],
                     (condition or expt['trial'])
                     )
-            
-            
+
+
             participant = Record(domain=domain, key=participant_key)
             attrs = {
                 'uid': participant_key,
@@ -527,7 +620,8 @@ class Expt(object):
         return (None, self.return_error('500.html'))
 
 
-    def start_mturk_expt(self, request, expt_uid=None, domain=None, debug=False, request_attrs=[]):
+
+    def start_mturk_expt(self, request, expt_uid=None, domain=None, debug=False, request_attrs=[], return_record=False):
         try:
             if not domain:
                 domain = self.participants_domain
@@ -581,7 +675,10 @@ class Expt(object):
             participant.set_attributes(attrs, True)
             participant.update()
 
-            return (participant_key, None)
+            if return_record:
+                return (participant, None)
+            else:
+                return (participant_key, None)
 
 
         except SimpleDBKeyInUseException as e:
@@ -661,9 +758,9 @@ class Expt(object):
             if not uid:
                 return self.error_response("Unknown participant")
 
-            start_date_local = parse( request.form['start_date_local'] )
-            end_date_local = parse( request.form['end_date_local'] )
-            date_offset = request.form['date_offset']
+            start_date_local = parse( request.form.get('start_date_local', '1970') )
+            end_date_local = parse( request.form.get('end_date_local', '1970') )
+            date_offset = request.form.get('date_offset', 0)
 
             message = "complete_expt: [{}] {}".format(
                     uid, 
@@ -680,7 +777,7 @@ class Expt(object):
                end_date_local = end_date_local - td
 
 
-            results =  request.form['results']
+            results =  request.form.get('results','[]')
             
             if not (uid and start_date_local and end_date_local and results):
                 return self.error_response("Incomplete data")
@@ -718,13 +815,16 @@ class Expt(object):
 
         return {"status":"success", "uid": uid, "mturk": mturk}
 
+
     def error_response(self, error):
         logger.info("error response: {}".format(error))
         return {'status': 'failed', 'msg': error}
 
 
-    def fetch_results(self, expt_uid, ignore={}):
+    def fetch_results(self, expt_uid, ignore={}, skip_s3=False, from_date=None):
         query = "SELECT * FROM {} WHERE expt_uid = '{}' ".format(self.participants_domain, expt_uid)
+        if from_date:
+            query += " AND created >= '{}' ".format(from_date)
         results = []
         qs = QuerySelect()
         for item in qs.sql(query):
@@ -732,7 +832,8 @@ class Expt(object):
                 continue
             if "s3_results" in item:
                 try: 
-                    item['results'] = self.get_S3(item['s3_results']) 
+                    if not skip_s3:
+                        item['results'] = self.get_S3(item['s3_results']) 
                     results.append(item)
                 except Exception as e:
                     print("Could not retreive result for item {}".format(item['uid']))
@@ -741,14 +842,15 @@ class Expt(object):
         return results
 
 
-    def fetch_result_from_key(self, expt_uid, key, value):
+    def fetch_result_from_key(self, expt_uid, key, value, skip_s3=False):
         query = "SELECT * FROM {} WHERE expt_uid = '{}' AND {} = '{}' ".format(self.participants_domain, expt_uid, key, value)
         results = []
         qs = QuerySelect()
         for item in qs.sql(query):
             if "s3_results" in item:
                 try:
-                    item['results'] = self.get_S3(item['s3_results'])
+                    if not skip_s3:
+                        item['results'] = self.get_S3(item['s3_results'])
                     results.append(item)
                 except Exception as e:
                     print("Could not retreive result for item {}".format(item['uid']))

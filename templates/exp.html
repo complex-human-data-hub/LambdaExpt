@@ -153,14 +153,14 @@
     timeline.push(welcome_block);
 
 
-    var plain_langauge_statement = {
+    var plain_language_statement = {
     type: jsPsychExternalHtml,
     url: "{{url_for('static', filename='html/plain-language-statement.html')}}",
     cont_btn: "next",
     data: {'part': 'statement'}
     };
 
-    timeline.push(plain_langauge_statement);
+    timeline.push(plain_language_statement);
 
     // Consent
     var consent = {
@@ -177,6 +177,10 @@
     };
 
     timeline.push(consent);
+
+
+    // If you want to keep the PLS and consent code, 
+    // Then your code will probably start here.
 
 
     // declare the block.

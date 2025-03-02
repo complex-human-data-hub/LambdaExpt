@@ -287,7 +287,7 @@ def poll_queue():
 def run_webserver():
     ''' Run web server '''
     host = "0.0.0.0"
-    port = 5000
+    port = 5001
     print("Serving on ", "http://" +  host + ":" + str(port))
     app.run(debug=True, host=host, port=port)
 

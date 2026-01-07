@@ -36,7 +36,7 @@ expt_uid = config.EXPT_UID
 study_list_length = 5
 test_list_length = 10
 
-stimulus_file = "word-list.json"
+stimulus_file = "word-list.json.gz"
 
 
 

@@ -1,10 +1,3 @@
-from __future__ import print_function
-from future import standard_library
-standard_library.install_aliases()
-from builtins import map
-from builtins import str
-from builtins import range
-from builtins import object
 import boto3
 from boto3.session import Session
 import hashlib
@@ -14,7 +7,7 @@ import io
 import json
 import re
 from dateutil.parser import parse
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from flask import Blueprint, jsonify, request
 from user_utils import nocache
 import os
@@ -27,6 +20,8 @@ import sys
 import jwt
 from os import getenv
 import zipfile
+
+UTC = timezone.utc
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -190,8 +185,8 @@ class Expt(object):
             
             dom = Domain(domain=self.participants_domain)
             participant_n = dom.count('expt_uid', expt_uid)
-            rand = "{:0>17}".format( random.randint(1e6, 9e16) )
-            created = datetime.now().strftime(DATESTRING_FORMAT)   
+            rand = "{:0>17}".format( random.randint(int(1e6), int(9e16)) )
+            created = datetime.now(UTC).strftime(DATESTRING_FORMAT)   
 
             participant_id = "{}.{}@{}".format(participant_n, rand, created)
 
@@ -211,7 +206,7 @@ class Expt(object):
                 'trial': (condition or expt['trial']),
                 'created': created,
                 'status': STARTED,
-                'start': datetime.now().strftime(DATESTRING_FORMAT),
+                'start': datetime.now(UTC).strftime(DATESTRING_FORMAT),
                 'participant_id': participant_id
                 }
 
@@ -279,7 +274,7 @@ class Expt(object):
         client.put_object(Key=key, Body=data, Bucket=bucket)
 
 
-    def make_key(self, user, experiment, codeversion=0, trial=0, internal=False):
+    def make_key(self, user, experiment, codeversion=0, trial=0, internal=False, skip_duplicate_record_check=False):
         """ 
         Use to make unique key for SimpleDB for both 
         Experiments and Experiments Participants
@@ -287,7 +282,7 @@ class Expt(object):
         if (internal):
             return self._make_key(user, experiment, codeversion, trial)
 
-        rec = Record(domain=self.domain)      
+        rec = Record(domain=self.domain, skip_duplicate_record_check=skip_duplicate_record_check)      
         key = rec.make_key(user, experiment, codeversion, trial)
         return key  
 
@@ -307,7 +302,7 @@ class Expt(object):
         so that they can indicate that they
         have finished the experiment
         """
-        mturk_code = random.randint(1e7,9e7)
+        mturk_code = random.randint(int(1e7),int(9e7))
         participant = Record(domain=domain, key=uid)
         attrs = {
                 'mturk_survey_code': mturk_code
@@ -330,6 +325,20 @@ class Expt(object):
             self.set_participant_attrs(uid, participant_attrs, debug=debug)
         return data
 
+
+    def prohibit_reload_expt(self, uid):
+        """
+        Sets the 'prohibit_reload' flag for the participant with 'uid'
+        """
+        participant = Record(domain=self.participants_domain, key=uid)
+        attrs = {
+                'prohibit_reload': datetime.now(UTC).strftime(DATESTRING_FORMAT)
+                }
+
+        participant.set_attributes(attrs, True)
+        participant.update()
+        return True
+    
 
     def set_participant_attrs(self, uid, attrs, debug=False):
         try:
@@ -435,7 +444,7 @@ class Expt(object):
                     'mturk_survey_code': random_id,
                     'status': COMPLETED,
                     'qualtrics_survey': qualtrics_survey_url,
-                    'end': datetime.now().strftime(DATESTRING_FORMAT),
+                    'end': datetime.now(UTC).strftime(DATESTRING_FORMAT),
                     }
 
             self.add_headers(request, attrs)
@@ -547,7 +556,7 @@ class Expt(object):
         attrs['ip'] = self.get_client_ip(request)
 
 
-    def start_prolific_expt(self, request, expt_uid=None, domain=None, debug=False, request_attrs=[]):
+    def start_prolific_expt(self, request, expt_uid=None, domain=None, debug=False, request_attrs=[], skip_duplicate_record_check=False):
         try:
             if not domain:
                 domain = self.participants_domain
@@ -571,18 +580,19 @@ class Expt(object):
                     prolific_id,
                     expt['uid'],
                     expt['codeversion'],
-                    (condition or expt['trial'])
+                    (condition or expt['trial']),
+                    skip_duplicate_record_check=skip_duplicate_record_check
                     )
 
 
-            participant = Record(domain=domain, key=participant_key)
+            participant = Record(domain=domain, key=participant_key, skip_duplicate_record_check=skip_duplicate_record_check)
             attrs = {
                 'uid': participant_key,
                 'expt_uid': expt['uid'],
                 'codeversion': expt['codeversion'],
                 'trial': (condition or expt['trial']),
-                'created': datetime.now().strftime(DATESTRING_FORMAT),
-                'start': datetime.now().strftime(DATESTRING_FORMAT),
+                'created': datetime.now(UTC).strftime(DATESTRING_FORMAT),
+                'start': datetime.now(UTC).strftime(DATESTRING_FORMAT),
                 'status': STARTED,
                 'prolific_id': prolific_id,
                 'session_id': session_id,
@@ -655,8 +665,8 @@ class Expt(object):
                 'expt_uid': expt['uid'],
                 'codeversion': expt['codeversion'],
                 'trial': (condition or expt['trial']),
-                'created': datetime.now().strftime(DATESTRING_FORMAT),
-                'start': datetime.now().strftime(DATESTRING_FORMAT),
+                'created': datetime.now(UTC).strftime(DATESTRING_FORMAT),
+                'start': datetime.now(UTC).strftime(DATESTRING_FORMAT),
                 'status': STARTED,
                 'worker_id': worker_id,
                 'assignment_id': assignment_id,
@@ -719,7 +729,7 @@ class Expt(object):
                 return "noredo.html"
 
             attrs = {
-                'start': datetime.now().strftime(DATESTRING_FORMAT),
+                'start': datetime.now(UTC).strftime(DATESTRING_FORMAT),
                 'status': STARTED
                 }
 
@@ -756,7 +766,7 @@ class Expt(object):
             if not domain:
                 domain = self.participants_domain
             if not uid:
-                return self.error_response("Unknown participant")
+                return self.error_response("Unknown participant domain")
 
             start_date_local = parse( request.form.get('start_date_local', '1970') )
             end_date_local = parse( request.form.get('end_date_local', '1970') )
@@ -799,7 +809,7 @@ class Expt(object):
                 's3_results': "s3://{}/{}".format(results_bucket, results_key),
                 'start_date_local': start_date_local.strftime(DATESTRING_FORMAT),
                 'end_date_local': end_date_local.strftime(DATESTRING_FORMAT),
-                'end': datetime.now().strftime(DATESTRING_FORMAT),
+                'end': datetime.now(UTC).strftime(DATESTRING_FORMAT),
                 'status': str(COMPLETED)
                 }
                
@@ -826,6 +836,7 @@ class Expt(object):
         if from_date:
             query += " AND created >= '{}' ".format(from_date)
         results = []
+        print("Query: {}".format(query))
         qs = QuerySelect()
         for item in qs.sql(query):
             if item['uid'] in ignore:    
@@ -860,20 +871,21 @@ class Expt(object):
     
 
     def debug(self, msg):
-        now = datetime.now()
-        msg = "[{}] {}".format(now.strftime("%Y-%m-%dT%H:%M:%S"), msg)
+        msg = "[{}] {}".format(datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S"), msg)
         _debug(msg)
 
-    def fetch_results_threaded(self, expt_uid, ignore={}):
-        query = "SELECT * FROM {} WHERE expt_uid = '{}' ".format(self.participants_domain, expt_uid)
-        results = []
-        self.debug("Fetch results")
-        qs = QuerySelect()
-        for item in qs.sql(query):
-            if item['uid'] in ignore:    
-                continue
-            if "s3_results" in item:
-                results.append(item)
+
+    def fetch_results_threaded(self, expt_uid, ignore={}, results=None):
+        if results is None:
+            results = []
+            query = "SELECT * FROM {} WHERE expt_uid = '{}' ".format(self.participants_domain, expt_uid)
+            self.debug("Fetch results")
+            qs = QuerySelect()
+            for item in qs.sql(query):
+                if item['uid'] in ignore:    
+                    continue
+                if "s3_results" in item:
+                    results.append(item)
 
         self.debug("...done")
         if not results:

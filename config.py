@@ -1,5 +1,6 @@
 from __future__ import print_function
 from os import getenv
+import os 
 
 jsPsychCurrent = True # Use the latest jsPsych, else use jsPsych 6
 
@@ -8,6 +9,8 @@ EXPT_UID="UniqueID"
 RESULTS_DIR="2020/ExampleExperiment/results"
 
 PROLIFIC_COMPLETION_CODE = None
+
+CHECK_PROHIBIT_RELOAD = False
 
 # Restrict device on AWS
 RESTRICTIONS = [] # ["IE", "mobile", "tablet", "tv"]
@@ -29,5 +32,9 @@ DEBUG = True
 if getenv('ExptEnv') == 'Production':
     DEBUG = False
 
+if CHECK_PROHIBIT_RELOAD:
+    os.environ['CHECK_PROHIBIT_RELOAD'] = '1'
+
+os.environ["SIMPLEDB_S3_BUCKET"] = "chdhtest"
 if __name__ == "__main__":
     print(EXPT_UID)

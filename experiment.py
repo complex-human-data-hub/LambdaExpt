@@ -84,7 +84,7 @@ def unique_start_exp():
         data=json.dumps( data )
         )
 
-    
+
 @app.route('/prolific', methods=['GET'])
 @nocache
 @restrictions
@@ -103,7 +103,7 @@ def prolific_start_exp():
         print(error)
         return render_template(error['template'], **error)
 
-    data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG ) 
+    data = me_expt.check_set_participant_attrs( uid, get_data( request.args ), DEBUG )
 
     if data.get('_error') != None:
         return render_template('error-page.html',error=data['_error'])
@@ -267,10 +267,26 @@ def start_exp():
         )
 
 
+@app.route('/prohibit-reload-expt', methods=['GET'])
+@nocache
+def prohibit_reload_expt():
+    print("Prohibit reload endpoint called")
+    uid = request.args.get('uid')
+    if not uid:
+        return "UID not provided", 400
+    # Implement logic to prohibit reload for the experiment with the given UID
+    # This could involve setting a flag in the database or in-memory store
+    # For now, just return success
+    me_expt.prohibit_reload_expt(uid)
+    print(f"Prohibit reload set for UID: {uid}")
+    return "Prohibit reload set", 200
+
+
+
 @app.route('/update-queue', methods=['GET'])
 @nocache
 def update_queue():
-    ret = expt.update_queue()
+    ret = expt_config.update_queue()
     return jsonify(ret)
 
 
@@ -278,7 +294,7 @@ def update_queue():
 @app.route('/poll-queue', methods=['GET'])
 @nocache
 def poll_queue():
-    ret = expt.poll_queue()
+    ret = expt_config.poll_queue()
     return jsonify(ret)
 
 

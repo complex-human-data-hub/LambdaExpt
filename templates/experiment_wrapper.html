@@ -205,6 +205,19 @@
                 }
             });
         }
+
+        function _prohibit_reload_expt(){
+            $.ajax({
+                type: 'GET',
+                url: '/prohibit-reload-expt?uid=' + _uid,
+                success: function (data) {
+                        //alert("Prohibit reload set");
+                },
+                error: function (jqXHR, textStatus, errorThrown){
+                    alert("Error setting prohibit reload:\n"+jqXHR.responseText);
+                }
+            });
+        }        
       </script>
 
       {% block body %}

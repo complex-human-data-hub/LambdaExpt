@@ -35,6 +35,7 @@ if getenv('ExptEnv') == 'Production':
 if CHECK_PROHIBIT_RELOAD:
     os.environ['CHECK_PROHIBIT_RELOAD'] = '1'
 
-os.environ["SIMPLEDB_S3_BUCKET"] = "chdhtest"
+os.environ["SIMPLEDB_S3_BUCKET"] = "<your_bucket>"
+
 if __name__ == "__main__":
     print(EXPT_UID)

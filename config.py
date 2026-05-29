@@ -4,6 +4,11 @@ import os
 
 jsPsychCurrent = True # Use the latest jsPsych, else use jsPsych 6
 
+# Client-side stack: 'jspsych' (default) renders templates/exp.html;
+# 'psiturk' renders templates/exp-psiturk.html, a Backbone SPA.
+EXPT_TYPE = 'psiturk'
+#EXPT_TYPE = 'jspsych'
+
 NAME="ExampleExperiment"
 EXPT_UID="UniqueID"
 RESULTS_DIR="2020/ExampleExperiment/results"

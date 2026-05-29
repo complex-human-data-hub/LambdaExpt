@@ -3,6 +3,7 @@ from builtins import str
 from flask import Flask, render_template, request, jsonify
 from user_utils import nocache, restrictions
 import json
+import time
 import MallExperiment as me
 from flask_s3 import FlaskS3
 #from flask_compress import Compress
@@ -31,10 +32,13 @@ s3_data_bucket = "chdhexpt"
 
 me_expt = me.Expt(domain=config.SDB_EXPERIMENTS_PARTICIPANTS)
 
-exp_html_template = 'exp.html'
-if not config.jsPsychCurrent:
-    # Use jsPsych v6
+EXPT_TYPE = getattr(config, 'EXPT_TYPE', 'jspsych')   # 'jspsych' | 'psiturk'
+if EXPT_TYPE == 'psiturk':
+    exp_html_template = 'exp-psiturk.html'
+elif not config.jsPsychCurrent:
     exp_html_template = 'exp-legacy.html'
+else:
+    exp_html_template = 'exp.html'
 
 
 app = Flask("Experiment_Server", static_folder=static_folder)
@@ -46,6 +50,13 @@ if not DEBUG:
 
 expt_common_blueprint = me_expt.expt_common_blueprint(s3_data_bucket, s3_results_key, debug=DEBUG)
 app.register_blueprint(expt_common_blueprint)
+
+
+# Expose DEBUG to every template (e.g. exp-psiturk.html uses it to pick
+# psiTurk's `mode = "debug" | "live"`, which controls the beforeunload prompt).
+@app.context_processor
+def inject_debug_flag():
+    return {'debug': DEBUG}
 
 #Compress(app)
 
@@ -298,8 +309,104 @@ def poll_queue():
     return jsonify(ret)
 
 
+# ---- psiTurk routes ---------------------------------------------------------
+# These are used when config.EXPT_TYPE == 'psiturk'. They are always-on but
+# inert for jsPsych projects (psiTurk's TaskData model is the only thing that
+# PUTs to /sync/<uid>).
 
-     
+@app.route('/inexp', methods=['POST'])
+@nocache
+@restrictions
+def inexp():
+    ret = {}
+    if request.method == 'POST':
+        uid = request.form['uniqueId']
+        ret['uid'] = uid
+    print(ret)
+    return jsonify(ret)
+
+
+@app.route('/quitter', methods=['POST'])
+@nocache
+@restrictions
+def quitter():
+    ret = {}
+    if request.method == 'POST':
+        uid = request.form['uniqueId']
+        ret['uid'] = uid
+    print(ret)
+    # Maybe add complete_expt here
+    return jsonify(ret)
+
+
+@app.route('/sync', methods=['POST'])
+@nocache
+@restrictions
+def sync():
+    ret = {}
+    if request.method == 'POST':
+        print("POST request", request.form)
+        uid = request.form['uid']
+        ret['uid'] = uid
+    elif request.method == 'GET':
+        print("GET request")
+        print(request.args)
+    elif request.method == 'PUT':
+        print("POST request", request.form)
+        uid = request.form['uid']
+        ret['uid'] = uid
+
+    print(ret)
+    return jsonify(ret)
+
+
+@app.route('/sync/<uid>', methods=['GET', 'PUT'])
+@nocache
+@restrictions
+def sync_uid(uid):
+    # psiTurk's TaskData model PUTs the full serialised model here every saveData().
+    # The model's `data` is the trial array — what gets persisted to S3.
+    # `questiondata` (where recordUnstructuredData writes) is rescued by
+    # appending it as a synthetic trialdata row so it survives the round-trip.
+    ret = {}
+    print("Syncing", uid)
+    if request.method == 'PUT':
+        print("PUT request", request.form)
+        data_json = request.json
+        data = data_json.get('data', [])
+        qdata = data_json.get('questiondata', {})
+        if qdata:
+            data = data + [{
+                'uniqueid': uid,
+                'current_trial': len(data),
+                'dateTime': int(time.time() * 1000),
+                'trialdata': {'phase': 'questiondata', **qdata},
+            }]
+        form_data = {
+            'results': json.dumps(data),
+        }
+        request_like_obj = me.MyObject(form=form_data)
+        res = me_expt.complete_expt(
+                    request_like_obj,
+                    uid=uid,
+                    results_bucket=s3_data_bucket,
+                    results_key=s3_results_key.format(uid),
+                    debug=DEBUG
+                    )
+        print("Form data", form_data)
+        print("Form data_json", data_json)
+        print("Save Res", res)
+
+    elif request.method == 'GET':
+        print("GET request", uid)
+
+    print(ret)
+    return jsonify(ret)
+
+
+# ---- end psiTurk routes -----------------------------------------------------
+
+
 def run_webserver():
     ''' Run web server '''
     host = "0.0.0.0"

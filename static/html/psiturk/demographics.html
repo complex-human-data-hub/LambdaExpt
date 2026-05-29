@@ -1,0 +1,40 @@
+<div style="margin: 2em auto; max-width: 600px;">
+    <div style="text-align: center;">
+        <h3>Demographic Questionnaire</h3>
+    </div>
+
+    <div class="exp-document-container" style="margin: auto;">
+        <p>Please complete the following short questionnaire before finishing.</p>
+
+        <p>
+            <label for="age">Age:</label><br>
+            <input type="number" id="age" min="0" max="120" style="width: 6em;" />
+        </p>
+
+        <p>
+            <label for="gender">Gender:</label><br>
+            <select id="gender">
+                <option value="">&mdash;</option>
+                <option value="female">Female</option>
+                <option value="male">Male</option>
+                <option value="nonbinary">Non-binary</option>
+                <option value="prefer_not_to_say">Prefer not to say</option>
+                <option value="other">Other / self-describe</option>
+            </select>
+        </p>
+
+        <p>
+            <label for="nation">Country of residence:</label><br>
+            <input type="text" id="nation" style="width: 20em;" />
+        </p>
+
+        <p>
+            <label for="flang">First (native) language:</label><br>
+            <input type="text" id="flang" style="width: 20em;" />
+        </p>
+    </div>
+
+    <div class="instructionsnav" style="text-align: center; margin-top: 2em;">
+        <button type="button" class="continue">Continue</button>
+    </div>
+</div>

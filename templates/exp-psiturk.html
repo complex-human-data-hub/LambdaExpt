@@ -1,0 +1,127 @@
+{% extends "experiment_wrapper.html" %}
+
+{% block title %} Experiment (psiTurk) {% endblock %}
+
+{% block extra_head %}
+    {# psiTurk hard deps. jQuery is already loaded by experiment_wrapper.html. #}
+    <script src="{{url_for('static', filename='lib/underscore-min.js')}}" type="text/javascript"></script>
+    <script src="{{url_for('static', filename='lib/backbone-min.js')}}" type="text/javascript"></script>
+
+    <link rel="stylesheet" href="{{url_for('static', filename='css/experiment.css')}}" type="text/css"></link>
+
+    <style>
+        /* psiTurk's showPage() drops the loaded HTML directly into <body>, so
+           page-level centring that the jsPsych path gets implicitly (via the
+           full-viewport #jspsych-target wrapper) has to be added explicitly.
+           These two rules centre the "Document N" heading and the Continue
+           button block in the shared static/html/document-{1,2,3}.html files;
+           the inner .exp-document-container keeps text-align: left so the
+           lorem-ipsum body stays readable. */
+        body > div > h3 {
+            text-align: center;
+        }
+        .exp-document-container + div {
+            text-align: center;
+        }
+    </style>
+
+    <script type="text/javascript">
+        // Set from expt_data below. task.js reads condition/counterbalance.
+        var uniqueId;
+        var condition = "1";
+        var counterbalance = "0";
+        // Where psiTurk.completeHIT() redirects after the run. Override per study.
+        var adServerLoc = "https://www.example.com";
+        // mode = "debug" suppresses psiTurk's beforeunload "Leaving site?" prompt
+        // (see psiturk.js:275-287). Driven by config.DEBUG via a context processor.
+        var mode = "{{ 'debug' if debug else 'live' }}";
+    </script>
+
+    <script src="{{url_for('static', filename='js/psiturk/psiturk.js')}}" type="text/javascript"></script>
+{% endblock %}
+
+
+{% block body %}
+    <div id="js-target"></div>
+{% endblock %}
+
+
+{% block after_body %}
+
+  <script>
+    uniqueId = _uid;
+    var expt_data = {{data|safe}};
+    console.log(expt_data);
+    if (expt_data.condition !== undefined) {
+        condition = expt_data.condition;
+    }
+    if (expt_data.counterbalance !== undefined) {
+        counterbalance = expt_data.counterbalance;
+    }
+
+    // Called by consent.html's "No" button. Defaults to the psiTurk
+    // completion redirect via adServerLoc.
+    function onexit() {
+        if (typeof psiTurk !== 'undefined') {
+            psiTurk.completeHIT();
+        } else {
+            window.location = adServerLoc;
+        }
+    }
+
+    // psiTurk-path send_debrief(). Optional `data` arg is for researchers
+    // who customise debrief-short.html to render per-participant content;
+    // common usage is send_debrief() with no arg.
+    // Called from psiTurk.saveData({success: send_debrief}) — the success
+    // callback is the persistence guard, so no polling is needed (unlike
+    // the jsPsych version which waits on _record_task_complete).
+    var send_debrief = function(data) {
+        var form = document.createElement("form");
+        form.setAttribute('method', 'post');
+        form.setAttribute('action', '/debrief');
+
+        var uidInput = document.createElement('input');
+        uidInput.setAttribute('type', 'hidden');
+        uidInput.setAttribute('name', 'uid');
+        uidInput.setAttribute('value', "{{uid}}");
+        form.appendChild(uidInput);
+
+        if (data !== undefined) {
+            var d = document.createElement('input');
+            d.setAttribute('type', 'hidden');
+            d.setAttribute('name', 'data');
+            d.setAttribute('value', data);
+            form.appendChild(d);
+        }
+
+        if (_mturk) {
+            var m = document.createElement('input');
+            m.setAttribute('type', 'hidden');
+            m.setAttribute('name', 'mturk');
+            m.setAttribute('value', _mturk);
+            form.appendChild(m);
+        } else if (_prolific) {
+            var p = document.createElement('input');
+            p.setAttribute('type', 'hidden');
+            p.setAttribute('name', 'prolific');
+            p.setAttribute('value', _prolific);
+            form.appendChild(p);
+        }
+
+        // Tear down psiTurk's beforeunload handler before navigating away to
+        // /debrief, or the browser prompts "Leaving site?" in production
+        // (mode='live'). teardownTask() fires _psiturk_finishedtask, which
+        // unbinds the handler at psiturk.js:335.
+        if (typeof psiTurk !== 'undefined' && psiTurk.teardownTask) {
+            psiTurk.teardownTask();
+        }
+
+        document.body.appendChild(form);
+        form.submit();
+    };
+  </script>
+
+  {# The example task. Researchers replace js/psiturk/task.js with their own. #}
+  <script src="{{url_for('static', filename='js/psiturk/task.js')}}" type="text/javascript"></script>
+
+{% endblock %}

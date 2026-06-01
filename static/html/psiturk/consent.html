@@ -1,0 +1,43 @@
+<div style="margin: 2em auto; max-width: 800px;">
+    <div style="text-align: center;">
+        <h3>Consent Form</h3>
+    </div>
+
+    <div class="exp-document-container" style="margin: auto;">
+        <!-- Researchers: replace this iframe src with your study's consent
+             form (PDF in Google Drive, etc.). Or replace the iframe entirely
+             with the consent text as <p> elements.
+             The default below matches the existing static/html/consent.html
+             so the jsPsych and psiTurk versions of the example look identical. -->
+        <iframe src="https://drive.google.com/file/d/1P4-J0CK79NsWuFnKlCjzw9_ltnnIuwD-/preview"
+                width="640" height="480"></iframe>
+    </div>
+
+    <div style="margin: 2em auto; text-align: center;">
+        <p>
+            <input type="checkbox" id="consent_checkbox" />
+            <label for="consent_checkbox">I agree to take part in this study.</label>
+        </p>
+    </div>
+
+    <div class="instructionsnav" style="text-align: center;">
+        <button type="button" class="continue">Yes &mdash; Start Experiment</button>
+        &nbsp;&nbsp;&nbsp;
+        <button type="button" onClick="onexit()">No</button>
+    </div>
+</div>
+
+<script>
+$(function(){
+    // Self-contained consent gate. Direct handler on .continue runs at the
+    // target phase, BEFORE psiTurk's Instructions controller fires its
+    // delegated handler on .instructionsnav at the bubble phase.
+    // stopPropagation prevents the advance when the checkbox is unticked.
+    $('.continue').on('click', function(e){
+        if(!$('#consent_checkbox').is(':checked')){
+            e.stopPropagation();
+            alert("Please tick the consent box to proceed.");
+        }
+    });
+});
+</script>

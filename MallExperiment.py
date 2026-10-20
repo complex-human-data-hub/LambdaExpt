@@ -1,7 +1,7 @@
 import boto3
 from boto3.session import Session
 import hashlib
-import pkgutil
+import importlib.util
 import gzip
 import io
 import json
@@ -27,17 +27,17 @@ logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
 
-if False and pkgutil.find_loader("unforgettable"):
+if False and importlib.util.find_spec("unforgettable"):
     from unforgettable.utils import _debug 
 else:
     def _debug(msg):
         pass
 
-if pkgutil.find_loader("SimpleDB"):
+if importlib.util.find_spec("SimpleDB"):
     from SimpleDB import Record, QuerySelect, Domain, SimpleDBKeyInUseException
-elif pkgutil.find_loader("SimpleDBLambda"):
+elif importlib.util.find_spec("SimpleDBLambda"):
     from SimpleDBLambda import Record, QuerySelect, Domain, SimpleDBKeyInUseException
-elif pkgutil.find_loader("SimpleDBLambdaTemplate"):
+elif importlib.util.find_spec("SimpleDBLambdaTemplate"):
     from SimpleDBLambdaTemplate import Record, QuerySelect, Domain, SimpleDBKeyInUseException
 else:
     raise Exception("No version of SimpleDB available")
